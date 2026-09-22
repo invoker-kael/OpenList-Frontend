@@ -7,13 +7,7 @@ import {
   Text,
   VStack,
 } from "@hope-ui/solid"
-import {
-  createSignal,
-  For,
-  onCleanup,
-  onMount,
-  Show,
-} from "solid-js"
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { useManageTitle } from "~/hooks"
 import { Resp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
@@ -186,11 +180,8 @@ const duration = (start?: string, end?: string) => {
   if (ms < 0) return "-"
   const seconds = Math.round(ms / 1000)
   if (seconds < 60) return `${seconds}s`
-  if (seconds < 3600)
-    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-  return `${Math.floor(seconds / 3600)}h ${Math.floor(
-    (seconds % 3600) / 60,
-  )}m`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
 }
 
 const StatCard = (props: {
@@ -219,11 +210,7 @@ const StatCard = (props: {
   </Box>
 )
 
-const Field = (props: {
-  label: string
-  children: any
-  hint?: string
-}) => (
+const Field = (props: { label: string; children: any; hint?: string }) => (
   <Box>
     <Text size="sm" mb="$1">
       {props.label}
@@ -636,12 +623,7 @@ const WebDAVWriteback = () => {
           />
         </SimpleGrid>
 
-        <Box
-          borderWidth="1px"
-          borderColor="$neutral6"
-          rounded="$lg"
-          p="$3"
-        >
+        <Box borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
           <Heading size="base" mb="$1">
             Completed cache maintenance
           </Heading>
@@ -743,7 +725,9 @@ const WebDAVWriteback = () => {
                       </td>
                       <td>{bytes(row.size)}</td>
                       <td>
-                        <span class="wb-badge">{row.provider_state || "-"}</span>
+                        <span class="wb-badge">
+                          {row.provider_state || "-"}
+                        </span>
                       </td>
                       <td>{row.recovery_state || "-"}</td>
                       <td>{row.retry_count}</td>
@@ -834,10 +818,7 @@ const WebDAVWriteback = () => {
         </Box>
 
         <SimpleGrid columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }} gap="$2">
-          <StatCard
-            label="History rows"
-            value={historySummary()?.total || 0}
-          />
+          <StatCard label="History rows" value={historySummary()?.total || 0} />
           <StatCard
             label="Completed"
             value={historySummary()?.results?.completed || 0}
@@ -849,12 +830,7 @@ const WebDAVWriteback = () => {
           />
         </SimpleGrid>
 
-        <Box
-          borderWidth="1px"
-          borderColor="$neutral6"
-          rounded="$lg"
-          p="$3"
-        >
+        <Box borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
           <Heading size="base" mb="$1">
             Delete History
           </Heading>
@@ -996,9 +972,9 @@ const WebDAVWriteback = () => {
                 </Heading>
                 <Text size="sm" color="$neutral10" mb="$3">
                   SpoolDir is read-only. Worker topology/Enabled changes may
-                  require restart. CompletedRemoteProbeSeconds controls how
-                  long released completed state can rely on fresh provider
-                  evidence; the reconciliation algorithm is unchanged.
+                  require restart. CompletedRemoteProbeSeconds controls how long
+                  released completed state can rely on fresh provider evidence;
+                  the reconciliation algorithm is unchanged.
                 </Text>
 
                 <SimpleGrid
