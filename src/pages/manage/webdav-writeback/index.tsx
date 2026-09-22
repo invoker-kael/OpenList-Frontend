@@ -1195,7 +1195,11 @@ const WebDAVWriteback = () => {
 
         <HStack w="$full" spacing="$2" wrap="wrap">
           <Button
-            variant={historyGroup() === "all" && historyAction() === "all" ? "solid" : "outline"}
+            variant={
+              historyGroup() === "all" && historyAction() === "all"
+                ? "solid"
+                : "outline"
+            }
             onClick={() => {
               setHistoryGroup("all")
               setHistoryFinalStatus("all")
