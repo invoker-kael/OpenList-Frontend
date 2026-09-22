@@ -1,0 +1,32 @@
+name: CloudSync Writeback Frontend
+
+on:
+  push:
+    branches:
+      - feature/cloudsync-writeback
+    paths:
+      - src/pages/manage/webdav-writeback/**
+      - src/pages/manage/sidemenu_items.tsx
+      - .github/workflows/cloudsync-writeback.yml
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24.20.0"
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format check
+        run: pnpm exec prettier --check src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx
+      - name: TypeScript check
+        run: pnpm exec tsc -p tsconfig.json --noEmit
+      - name: Build
+        run: pnpm build
