@@ -28,7 +28,11 @@
     "no_action_required": "No action required",
     "generation": "Generation",
     "reset_filters": "Reset filters",
-    "auto_refresh_off": "Auto refresh off"
+    "auto_refresh_off": "Auto refresh off",
+    "all": "All",
+    "processing": "Processing",
+    "completed": "Completed",
+    "advanced_filters": "Advanced filters"
   },
   "overview": {
     "writeback_enabled": "Writeback enabled",

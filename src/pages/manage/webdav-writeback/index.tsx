@@ -255,6 +255,27 @@ const StatCard = (props: {
   </Box>
 )
 
+const HeaderFilter = (props: {
+  label: string
+  active?: boolean
+  children: any
+}) => (
+  <details>
+    <summary
+      style={{
+        cursor: "pointer",
+        "white-space": "nowrap",
+        "user-select": "none",
+      }}
+    >
+      {props.label} {props.active ? "•" : "▾"}
+    </summary>
+    <Box mt="$2" minW="$48">
+      {props.children}
+    </Box>
+  </details>
+)
+
 const ChoiceSelect = (props: {
   value: string
   onChange: (value: string) => void
@@ -304,6 +325,7 @@ const WebDAVWriteback = () => {
   const [activeSearch, setActiveSearch] = createSignal("")
 
   const [historySearch, setHistorySearch] = createSignal("")
+  const [historyGroup, setHistoryGroup] = createSignal("all")
   const [historyFinalStatus, setHistoryFinalStatus] = createSignal("all")
   const [historyAction, setHistoryAction] = createSignal("all")
   const [historyCurrentState, setHistoryCurrentState] = createSignal("all")
@@ -392,6 +414,7 @@ const WebDAVWriteback = () => {
   const loadHistory = async () => {
     const params = new URLSearchParams({ limit: historyLimit() })
     if (historySearch().trim()) params.set("q", historySearch().trim())
+    if (historyGroup() !== "all") params.set("status_group", historyGroup())
     if (historyFinalStatus() !== "all")
       params.set("status", historyFinalStatus())
     if (historyAction() !== "all")
@@ -450,6 +473,7 @@ const WebDAVWriteback = () => {
       activeSearch()
     } else if (currentTab === "history") {
       historySearch()
+      historyGroup()
       historyFinalStatus()
       historyAction()
       historyCurrentState()
@@ -767,6 +791,7 @@ const WebDAVWriteback = () => {
 
   const resetHistoryFilters = () => {
     setHistorySearch("")
+    setHistoryGroup("all")
     setHistoryFinalStatus("all")
     setHistoryAction("all")
     setHistoryCurrentState("all")
@@ -1170,8 +1195,19 @@ const WebDAVWriteback = () => {
 
         <HStack w="$full" spacing="$2" wrap="wrap">
           <Button
-            variant="outline"
+            variant={historyGroup() === "all" && historyAction() === "all" ? "solid" : "outline"}
             onClick={() => {
+              setHistoryGroup("all")
+              setHistoryFinalStatus("all")
+              setHistoryAction("all")
+            }}
+          >
+            {t("webdav_writeback.common.all")}
+          </Button>
+          <Button
+            variant={historyAction() === "true" ? "solid" : "outline"}
+            onClick={() => {
+              setHistoryGroup("all")
               setHistoryFinalStatus("all")
               setHistoryAction("true")
             }}
@@ -1179,91 +1215,85 @@ const WebDAVWriteback = () => {
             {t("webdav_writeback.common.action_required")}
           </Button>
           <Button
-            variant="outline"
+            variant={historyGroup() === "processing" ? "solid" : "outline"}
             onClick={() => {
+              setHistoryGroup("processing")
+              setHistoryFinalStatus("all")
               setHistoryAction("all")
-              setHistoryFinalStatus("automatic_recovery")
             }}
           >
-            {t("webdav_writeback.status.automatic_recovery")}
+            {t("webdav_writeback.common.processing")}
           </Button>
           <Button
-            variant="outline"
+            variant={historyGroup() === "completed" ? "solid" : "outline"}
             onClick={() => {
+              setHistoryGroup("completed")
+              setHistoryFinalStatus("all")
               setHistoryAction("all")
-              setHistoryFinalStatus("recovered")
             }}
           >
-            {t("webdav_writeback.status.recovered")}
+            {t("webdav_writeback.common.completed")}
           </Button>
           <Input
-            maxW="$80"
+            maxW="$96"
             placeholder={t("webdav_writeback.common.filter_path")}
             value={historySearch()}
             onInput={(e) => setHistorySearch(e.currentTarget.value)}
           />
-          <ChoiceSelect
-            value={historyFinalStatus()}
-            onChange={setHistoryFinalStatus}
-            choices={historyFinalStatusChoices()}
-          />
-          <ChoiceSelect
-            value={historyAction()}
-            onChange={setHistoryAction}
-            choices={historyActionChoices()}
-          />
-          <ChoiceSelect
-            value={historyCurrentState()}
-            onChange={setHistoryCurrentState}
-            choices={historyCurrentStateChoices()}
-          />
-          <Input
-            type="number"
-            min="1"
-            maxW="$32"
-            placeholder={t("webdav_writeback.common.generation")}
-            value={historyGeneration()}
-            onInput={(e) => setHistoryGeneration(e.currentTarget.value)}
-          />
-          <ChoiceSelect
-            value={historyResult()}
-            onChange={setHistoryResult}
-            choices={historyResultChoices()}
-          />
-          <ChoiceSelect
-            value={historyRecovery()}
-            onChange={setHistoryRecovery}
-            choices={historyRecoveryChoices()}
-          />
-          <ChoiceSelect
-            value={historyError()}
-            onChange={setHistoryError}
-            choices={errorChoices()}
-          />
-          <Input
-            type="datetime-local"
-            value={historyAfter()}
-            onInput={(e) => setHistoryAfter(e.currentTarget.value)}
-            aria-label={t("webdav_writeback.common.after")}
-          />
-          <Input
-            type="datetime-local"
-            value={historyBefore()}
-            onInput={(e) => setHistoryBefore(e.currentTarget.value)}
-            aria-label={t("webdav_writeback.common.before")}
-          />
-          <ChoiceSelect
-            value={historyLimit()}
-            onChange={setHistoryLimit}
-            minW="$24"
-            choices={["100", "200", "500"].map((value) => ({
-              value,
-              label: value,
-            }))}
-          />
-          <Button variant="outline" onClick={resetHistoryFilters}>
-            {t("webdav_writeback.common.reset_filters")}
-          </Button>
+          <details>
+            <summary style={{ cursor: "pointer", "white-space": "nowrap" }}>
+              {t("webdav_writeback.common.advanced_filters")} ▾
+            </summary>
+            <HStack mt="$2" spacing="$2" wrap="wrap">
+              <Input
+                type="number"
+                min="1"
+                maxW="$32"
+                placeholder={t("webdav_writeback.common.generation")}
+                value={historyGeneration()}
+                onInput={(e) => setHistoryGeneration(e.currentTarget.value)}
+              />
+              <ChoiceSelect
+                value={historyResult()}
+                onChange={setHistoryResult}
+                choices={historyResultChoices()}
+              />
+              <ChoiceSelect
+                value={historyRecovery()}
+                onChange={setHistoryRecovery}
+                choices={historyRecoveryChoices()}
+              />
+              <ChoiceSelect
+                value={historyError()}
+                onChange={setHistoryError}
+                choices={errorChoices()}
+              />
+              <Input
+                type="datetime-local"
+                value={historyAfter()}
+                onInput={(e) => setHistoryAfter(e.currentTarget.value)}
+                aria-label={t("webdav_writeback.common.after")}
+              />
+              <Input
+                type="datetime-local"
+                value={historyBefore()}
+                onInput={(e) => setHistoryBefore(e.currentTarget.value)}
+                aria-label={t("webdav_writeback.common.before")}
+              />
+              <ChoiceSelect
+                value={historyLimit()}
+                onChange={setHistoryLimit}
+                minW="$24"
+                choices={["100", "200", "500"].map((value) => ({
+                  value,
+                  label: value,
+                }))}
+              />
+              <Button variant="outline" onClick={resetHistoryFilters}>
+                {t("webdav_writeback.common.reset_filters")}
+              </Button>
+            </HStack>
+          </details>
         </HStack>
 
         <SimpleGrid
@@ -1344,20 +1374,50 @@ const WebDAVWriteback = () => {
             <Thead>
               <Tr>
                 <Th />
-                <For
-                  each={[
-                    "path",
-                    "final_status",
-                    "action",
-                    "current_generation",
-                    "current_state",
-                    "size",
-                    "updated",
-                    "completed",
-                  ]}
-                >
-                  {(key) => <Th>{t(`webdav_writeback.table.${key}`)}</Th>}
-                </For>
+                <Th>{t("webdav_writeback.table.path")}</Th>
+                <Th>
+                  <HeaderFilter
+                    label={t("webdav_writeback.table.final_status")}
+                    active={historyFinalStatus() !== "all"}
+                  >
+                    <ChoiceSelect
+                      value={historyFinalStatus()}
+                      onChange={(value) => {
+                        setHistoryGroup("all")
+                        setHistoryFinalStatus(value)
+                      }}
+                      choices={historyFinalStatusChoices()}
+                    />
+                  </HeaderFilter>
+                </Th>
+                <Th>
+                  <HeaderFilter
+                    label={t("webdav_writeback.table.action")}
+                    active={historyAction() !== "all"}
+                  >
+                    <ChoiceSelect
+                      value={historyAction()}
+                      onChange={setHistoryAction}
+                      choices={historyActionChoices()}
+                    />
+                  </HeaderFilter>
+                </Th>
+                <Th>{t("webdav_writeback.table.current_generation")}</Th>
+                <Th>
+                  <HeaderFilter
+                    label={t("webdav_writeback.table.current_state")}
+                    active={historyCurrentState() !== "all"}
+                  >
+                    <ChoiceSelect
+                      value={historyCurrentState()}
+                      onChange={setHistoryCurrentState}
+                      choices={historyCurrentStateChoices()}
+                    />
+                  </HeaderFilter>
+                </Th>
+                <Th>{t("webdav_writeback.table.size")}</Th>
+                <Th>{t("webdav_writeback.table.updated")}</Th>
+                <Th>{t("webdav_writeback.table.completed")}</Th>
               </Tr>
             </Thead>
             <Tbody>

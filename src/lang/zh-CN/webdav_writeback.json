@@ -28,7 +28,11 @@
     "no_action_required": "无需人工操作",
     "generation": "代次",
     "reset_filters": "重置筛选",
-    "auto_refresh_off": "自动刷新已关闭"
+    "auto_refresh_off": "自动刷新已关闭",
+    "all": "全部",
+    "processing": "处理中",
+    "completed": "已完成",
+    "advanced_filters": "高级筛选"
   },
   "overview": {
     "writeback_enabled": "写回已启用",
