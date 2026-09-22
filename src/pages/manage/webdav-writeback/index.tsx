@@ -179,7 +179,18 @@ type Choice = {
 }
 
 const API = "/admin/webdav-writeback"
-const AUTO_REFRESH_CHOICES = ["1", "2", "3", "5", "10", "15", "20", "30", "45", "60"]
+const AUTO_REFRESH_CHOICES = [
+  "1",
+  "2",
+  "3",
+  "5",
+  "10",
+  "15",
+  "20",
+  "30",
+  "45",
+  "60",
+]
 
 const unwrap = async <T,>(request: Promise<Resp<T>>): Promise<T> => {
   const resp = await request
