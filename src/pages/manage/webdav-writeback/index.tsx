@@ -1194,50 +1194,6 @@ const WebDAVWriteback = () => {
         </Text>
 
         <HStack w="$full" spacing="$2" wrap="wrap">
-          <Button
-            variant={
-              historyGroup() === "all" && historyAction() === "all"
-                ? "solid"
-                : "outline"
-            }
-            onClick={() => {
-              setHistoryGroup("all")
-              setHistoryFinalStatus("all")
-              setHistoryAction("all")
-            }}
-          >
-            {t("webdav_writeback.common.all")}
-          </Button>
-          <Button
-            variant={historyAction() === "true" ? "solid" : "outline"}
-            onClick={() => {
-              setHistoryGroup("all")
-              setHistoryFinalStatus("all")
-              setHistoryAction("true")
-            }}
-          >
-            {t("webdav_writeback.common.action_required")}
-          </Button>
-          <Button
-            variant={historyGroup() === "processing" ? "solid" : "outline"}
-            onClick={() => {
-              setHistoryGroup("processing")
-              setHistoryFinalStatus("all")
-              setHistoryAction("all")
-            }}
-          >
-            {t("webdav_writeback.common.processing")}
-          </Button>
-          <Button
-            variant={historyGroup() === "completed" ? "solid" : "outline"}
-            onClick={() => {
-              setHistoryGroup("completed")
-              setHistoryFinalStatus("all")
-              setHistoryAction("all")
-            }}
-          >
-            {t("webdav_writeback.common.completed")}
-          </Button>
           <Input
             maxW="$96"
             placeholder={t("webdav_writeback.common.filter_path")}
