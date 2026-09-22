@@ -28,6 +28,7 @@ import {
 } from "@hope-ui/solid"
 import {
   createEffect,
+  createMemo,
   createSignal,
   For,
   onCleanup,
@@ -180,6 +181,31 @@ type Choice = {
   label: string
 }
 
+type SortDirection = "asc" | "desc"
+type ActiveSortKey =
+  | "path"
+  | "size"
+  | "progress"
+  | "status"
+  | "action"
+  | "state"
+  | "recovery"
+  | "retry"
+  | "verify"
+  | "started"
+  | "updated"
+  | "retry_at"
+  | "error"
+type HistorySortKey =
+  | "path"
+  | "status"
+  | "action"
+  | "current_generation"
+  | "current_state"
+  | "size"
+  | "updated"
+  | "completed"
+
 const API = "/admin/webdav-writeback"
 const AUTO_REFRESH_CHOICES = [
   "1",
@@ -257,9 +283,28 @@ const StatCard = (props: {
   </Box>
 )
 
+const SortControls = (props: {
+  onSort: (direction: SortDirection) => void
+  ascLabel: string
+  descLabel: string
+}) => (
+  <HStack spacing="$2" mb="$2">
+    <Button variant="outline" onClick={() => props.onSort("asc")}>
+      {props.ascLabel}
+    </Button>
+    <Button variant="outline" onClick={() => props.onSort("desc")}>
+      {props.descLabel}
+    </Button>
+  </HStack>
+)
+
 const HeaderFilter = (props: {
   label: string
   active?: boolean
+  sortDirection?: SortDirection
+  onSort?: (direction: SortDirection) => void
+  sortAscLabel?: string
+  sortDescLabel?: string
   children: any
 }) => (
   <details>
@@ -270,10 +315,46 @@ const HeaderFilter = (props: {
         "user-select": "none",
       }}
     >
-      {props.label} {props.active ? "•" : "▾"}
+      {props.label} {props.sortDirection === "asc" ? "↑" : ""}
+      {props.sortDirection === "desc" ? "↓" : ""} {props.active ? "•" : "▾"}
     </summary>
     <Box mt="$2" minW="$48">
+      <Show when={props.onSort}>
+        <SortControls
+          onSort={props.onSort!}
+          ascLabel={props.sortAscLabel || "↑"}
+          descLabel={props.sortDescLabel || "↓"}
+        />
+      </Show>
       {props.children}
+    </Box>
+  </details>
+)
+
+const SortableHeader = (props: {
+  label: string
+  sortDirection?: SortDirection
+  onSort: (direction: SortDirection) => void
+  ascLabel: string
+  descLabel: string
+}) => (
+  <details>
+    <summary
+      style={{
+        cursor: "pointer",
+        "white-space": "nowrap",
+        "user-select": "none",
+      }}
+    >
+      {props.label} {props.sortDirection === "asc" ? "↑" : ""}
+      {props.sortDirection === "desc" ? "↓" : ""} ▾
+    </summary>
+    <Box mt="$2" minW="$40">
+      <SortControls
+        onSort={props.onSort}
+        ascLabel={props.ascLabel}
+        descLabel={props.descLabel}
+      />
     </Box>
   </details>
 )
@@ -325,8 +406,16 @@ const WebDAVWriteback = () => {
 
   const [activeState, setActiveState] = createSignal("active")
   const [activeSearch, setActiveSearch] = createSignal("")
+  const [activeSortKey, setActiveSortKey] =
+    createSignal<ActiveSortKey>("updated")
+  const [activeSortDirection, setActiveSortDirection] =
+    createSignal<SortDirection>("desc")
 
   const [historySearch, setHistorySearch] = createSignal("")
+  const [historySortKey, setHistorySortKey] =
+    createSignal<HistorySortKey>("updated")
+  const [historySortDirection, setHistorySortDirection] =
+    createSignal<SortDirection>("desc")
   const [historyGroup, setHistoryGroup] = createSignal("all")
   const [historyFinalStatus, setHistoryFinalStatus] = createSignal("all")
   const [historyAction, setHistoryAction] = createSignal("all")
@@ -815,6 +904,122 @@ const WebDAVWriteback = () => {
     }
   }
 
+  const compareSortValue = (
+    a: string | number | undefined,
+    b: string | number | undefined,
+  ) => {
+    if (typeof a === "number" || typeof b === "number") {
+      return Number(a || 0) - Number(b || 0)
+    }
+    return String(a || "").localeCompare(String(b || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    })
+  }
+
+  const activeSortValue = (row: ActiveRow, key: ActiveSortKey) => {
+    switch (key) {
+      case "path":
+        return row.path
+      case "size":
+        return row.size
+      case "progress":
+        return activeProgress(row) ?? -1
+      case "status":
+        return cloudSyncStatus(
+          row.effective_status || row.provider_state,
+          row.operator_action,
+        )
+      case "action":
+        return row.operator_action || ""
+      case "state":
+        return row.provider_state
+      case "recovery":
+        return row.recovery_state || ""
+      case "retry":
+        return row.retry_count
+      case "verify":
+        return row.verify_count
+      case "started":
+        return row.started_at ? new Date(row.started_at).getTime() : 0
+      case "retry_at":
+        return row.retry_at ? new Date(row.retry_at).getTime() : 0
+      case "error":
+        return row.last_error || ""
+      default:
+        return row.updated_at ? new Date(row.updated_at).getTime() : 0
+    }
+  }
+
+  const historySortValue = (row: HistoryRow, key: HistorySortKey) => {
+    switch (key) {
+      case "path":
+        return row.path
+      case "status":
+        return historyTerminalStatus(row.effective_status || row.result)
+      case "action":
+        return row.operator_action || ""
+      case "current_generation":
+        return row.current_generation || 0
+      case "current_state":
+        return row.current_provider_state || ""
+      case "size":
+        return row.size
+      case "completed": {
+        const completed = row.current_completed_at || row.completed_at
+        return completed ? new Date(completed).getTime() : 0
+      }
+      default:
+        return row.updated_at ? new Date(row.updated_at).getTime() : 0
+    }
+  }
+
+  const sortedActiveRows = createMemo(() => {
+    const key = activeSortKey()
+    const direction = activeSortDirection()
+    return [...activeRows()].sort((a, b) => {
+      const primary = compareSortValue(
+        activeSortValue(a, key),
+        activeSortValue(b, key),
+      )
+      if (primary !== 0) return direction === "asc" ? primary : -primary
+      const pathOrder = a.path.localeCompare(b.path, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+      if (pathOrder !== 0) return pathOrder
+      return a.id.localeCompare(b.id, undefined, { numeric: true })
+    })
+  })
+
+  const sortedHistoryRows = createMemo(() => {
+    const key = historySortKey()
+    const direction = historySortDirection()
+    return [...historyRows()].sort((a, b) => {
+      const primary = compareSortValue(
+        historySortValue(a, key),
+        historySortValue(b, key),
+      )
+      if (primary !== 0) return direction === "asc" ? primary : -primary
+      const pathOrder = a.path.localeCompare(b.path, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+      if (pathOrder !== 0) return pathOrder
+      return a.id - b.id
+    })
+  })
+
+  const setActiveSort = (key: ActiveSortKey, direction: SortDirection) => {
+    setActiveSortKey(key)
+    setActiveSortDirection(direction)
+  }
+
+  const setHistorySort = (key: HistorySortKey, direction: SortDirection) => {
+    setHistorySortKey(key)
+    setHistorySortDirection(direction)
+  }
+
   const historyActionChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_actions") },
     { value: "true", label: t("webdav_writeback.common.action_required") },
@@ -1098,13 +1303,41 @@ const WebDAVWriteback = () => {
           <Table highlightOnHover dense>
             <Thead>
               <Tr>
-                <Th>{t("webdav_writeback.table.path")}</Th>
-                <Th>{t("webdav_writeback.table.size")}</Th>
-                <Th>{t("webdav_writeback.table.progress")}</Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.path")}
+                    sortDirection={activeSortKey() === "path" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("path", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.size")}
+                    sortDirection={activeSortKey() === "size" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("size", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.progress")}
+                    sortDirection={activeSortKey() === "progress" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("progress", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
                     active={activeState() !== "active"}
+                    sortDirection={activeSortKey() === "status" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("status", direction)}
+                    sortAscLabel={t("webdav_writeback.common.sort_asc")}
+                    sortDescLabel={t("webdav_writeback.common.sort_desc")}
                   >
                     <ChoiceSelect
                       value={activeState()}
@@ -1113,20 +1346,92 @@ const WebDAVWriteback = () => {
                     />
                   </HeaderFilter>
                 </Th>
-                <Th>{t("webdav_writeback.table.action")}</Th>
-                <Th>{t("webdav_writeback.table.state")}</Th>
-                <Th>{t("webdav_writeback.table.recovery")}</Th>
-                <Th>{t("webdav_writeback.table.retry")}</Th>
-                <Th>{t("webdav_writeback.table.verify")}</Th>
-                <Th>{t("webdav_writeback.table.started")}</Th>
-                <Th>{t("webdav_writeback.table.updated")}</Th>
-                <Th>{t("webdav_writeback.table.retry_at")}</Th>
-                <Th>{t("webdav_writeback.table.error")}</Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.action")}
+                    sortDirection={activeSortKey() === "action" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("action", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.state")}
+                    sortDirection={activeSortKey() === "state" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("state", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.recovery")}
+                    sortDirection={activeSortKey() === "recovery" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("recovery", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.retry")}
+                    sortDirection={activeSortKey() === "retry" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("retry", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.verify")}
+                    sortDirection={activeSortKey() === "verify" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("verify", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.started")}
+                    sortDirection={activeSortKey() === "started" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("started", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.updated")}
+                    sortDirection={activeSortKey() === "updated" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("updated", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.retry_at")}
+                    sortDirection={activeSortKey() === "retry_at" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("retry_at", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.error")}
+                    sortDirection={activeSortKey() === "error" ? activeSortDirection() : undefined}
+                    onSort={(direction) => setActiveSort("error", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
               </Tr>
             </Thead>
             <Tbody>
               <Show
-                when={activeRows().length}
+                when={sortedActiveRows().length}
                 fallback={
                   <Tr>
                     <Td colSpan={13}>
@@ -1137,7 +1442,7 @@ const WebDAVWriteback = () => {
                   </Tr>
                 }
               >
-                <For each={activeRows()}>
+                <For each={sortedActiveRows()}>
                   {(row) => (
                     <Tr>
                       <Td>
@@ -1376,11 +1681,23 @@ const WebDAVWriteback = () => {
             <Thead>
               <Tr>
                 <Th />
-                <Th>{t("webdav_writeback.table.path")}</Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.path")}
+                    sortDirection={historySortKey() === "path" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("path", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
                     active={historyCloudSyncStatus() !== "all"}
+                    sortDirection={historySortKey() === "status" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("status", direction)}
+                    sortAscLabel={t("webdav_writeback.common.sort_asc")}
+                    sortDescLabel={t("webdav_writeback.common.sort_desc")}
                   >
                     <ChoiceSelect
                       value={historyCloudSyncStatus()}
@@ -1393,6 +1710,10 @@ const WebDAVWriteback = () => {
                   <HeaderFilter
                     label={t("webdav_writeback.table.action")}
                     active={historyAction() !== "all"}
+                    sortDirection={historySortKey() === "action" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("action", direction)}
+                    sortAscLabel={t("webdav_writeback.common.sort_asc")}
+                    sortDescLabel={t("webdav_writeback.common.sort_desc")}
                   >
                     <ChoiceSelect
                       value={historyAction()}
@@ -1401,11 +1722,23 @@ const WebDAVWriteback = () => {
                     />
                   </HeaderFilter>
                 </Th>
-                <Th>{t("webdav_writeback.table.current_generation")}</Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.current_generation")}
+                    sortDirection={historySortKey() === "current_generation" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("current_generation", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.current_state")}
                     active={historyCurrentState() !== "all"}
+                    sortDirection={historySortKey() === "current_state" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("current_state", direction)}
+                    sortAscLabel={t("webdav_writeback.common.sort_asc")}
+                    sortDescLabel={t("webdav_writeback.common.sort_desc")}
                   >
                     <ChoiceSelect
                       value={historyCurrentState()}
@@ -1414,14 +1747,38 @@ const WebDAVWriteback = () => {
                     />
                   </HeaderFilter>
                 </Th>
-                <Th>{t("webdav_writeback.table.size")}</Th>
-                <Th>{t("webdav_writeback.table.updated")}</Th>
-                <Th>{t("webdav_writeback.table.completed")}</Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.size")}
+                    sortDirection={historySortKey() === "size" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("size", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.updated")}
+                    sortDirection={historySortKey() === "updated" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("updated", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
+                <Th>
+                  <SortableHeader
+                    label={t("webdav_writeback.table.completed")}
+                    sortDirection={historySortKey() === "completed" ? historySortDirection() : undefined}
+                    onSort={(direction) => setHistorySort("completed", direction)}
+                    ascLabel={t("webdav_writeback.common.sort_asc")}
+                    descLabel={t("webdav_writeback.common.sort_desc")}
+                  />
+                </Th>
               </Tr>
             </Thead>
             <Tbody>
               <Show
-                when={historyRows().length}
+                when={sortedHistoryRows().length}
                 fallback={
                   <Tr>
                     <Td colSpan={12}>
@@ -1432,7 +1789,7 @@ const WebDAVWriteback = () => {
                   </Tr>
                 }
               >
-                <For each={historyRows()}>
+                <For each={sortedHistoryRows()}>
                   {(row) => (
                     <Tr>
                       <Td>

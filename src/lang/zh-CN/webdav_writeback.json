@@ -32,7 +32,9 @@
     "all": "全部",
     "processing": "处理中",
     "completed": "已完成",
-    "advanced_filters": "高级筛选"
+    "advanced_filters": "高级筛选",
+    "sort_asc": "升序",
+    "sort_desc": "降序"
   },
   "overview": {
     "writeback_enabled": "写回已启用",

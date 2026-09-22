@@ -32,7 +32,9 @@
     "all": "All",
     "processing": "Processing",
     "completed": "Completed",
-    "advanced_filters": "Advanced filters"
+    "advanced_filters": "Advanced filters",
+    "sort_asc": "Sort ascending",
+    "sort_desc": "Sort descending"
   },
   "overview": {
     "writeback_enabled": "Writeback enabled",
