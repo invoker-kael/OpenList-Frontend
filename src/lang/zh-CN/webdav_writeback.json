@@ -20,7 +20,14 @@
     "has_error": "有错误",
     "no_error": "无错误",
     "after": "开始时间",
-    "before": "结束时间"
+    "before": "结束时间",
+    "all_final_status": "全部最终状态",
+    "all_current_states": "全部当前状态",
+    "all_actions": "全部操作要求",
+    "action_required": "需要人工操作",
+    "no_action_required": "无需人工操作",
+    "generation": "代次",
+    "reset_filters": "重置筛选"
   },
   "overview": {
     "writeback_enabled": "写回已启用",
@@ -71,7 +78,8 @@
     "success_age_required": "清理成功记录时必须填写大于 0 的保留天数。",
     "days": "天",
     "confirm_class": "删除历史分类：",
-    "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响。"
+    "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响。",
+    "status_description": "“最终状态”是运维判断的主要依据。原始历史结果、恢复类型和旧错误仅保留在“高级信息”中用于审计。"
   },
   "table": {
     "path": "路径",
@@ -88,11 +96,19 @@
     "duration": "耗时",
     "completed": "完成时间",
     "remote_verified": "远端验证时间",
-    "error": "错误"
+    "error": "错误",
+    "final_status": "最终状态",
+    "action": "需要操作",
+    "current_generation": "当前代次",
+    "current_state": "当前状态"
   },
   "advanced": {
     "generation": "代次",
-    "final_event": "最终事件"
+    "final_event": "最终事件",
+    "historical_result": "历史结果",
+    "historical_recovery": "历史恢复类型",
+    "historical_error": "历史错误",
+    "current_recovery": "当前恢复状态"
   },
   "state": {
     "active": "活动任务",
@@ -147,5 +163,25 @@
     "saved_restart": "已保存，需要重启才能应用：",
     "saved_active": "已保存并立即生效。",
     "saved_notice": "WebDAV 写回设置已保存"
+  },
+  "status": {
+    "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",
+    "reupload_receiving": "正在接收 Cloud Sync 重传",
+    "reupload_received": "已收到 Cloud Sync 重传",
+    "reupload_uploading": "重传文件正在写入远端",
+    "reupload_verifying": "正在验证重传文件",
+    "recovered": "已恢复",
+    "automatic_recovery": "自动恢复中",
+    "completed": "已完成",
+    "deleted": "已删除",
+    "remote_missing": "远端缺失",
+    "queued": "已排队",
+    "uploading": "上传中",
+    "verifying": "验证中",
+    "receiving": "接收中"
+  },
+  "action": {
+    "restart_cloudsync": "停用后重新启用 Cloud Sync 任务",
+    "none": "无需操作"
   }
 }

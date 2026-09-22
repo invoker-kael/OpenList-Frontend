@@ -20,7 +20,14 @@
     "has_error": "Has error",
     "no_error": "No error",
     "after": "After",
-    "before": "Before"
+    "before": "Before",
+    "all_final_status": "All final status",
+    "all_current_states": "All current states",
+    "all_actions": "All actions",
+    "action_required": "Action required",
+    "no_action_required": "No action required",
+    "generation": "Generation",
+    "reset_filters": "Reset filters"
   },
   "overview": {
     "writeback_enabled": "Writeback enabled",
@@ -71,7 +78,8 @@
     "success_age_required": "Successful History cleanup requires a positive age.",
     "days": "days",
     "confirm_class": "Delete History class:",
-    "confirm_class_safety": "Current canonical/spool/provider state is untouched."
+    "confirm_class_safety": "Current canonical/spool/provider state is untouched.",
+    "status_description": "Final Status is the operator-facing answer. Raw historical result, recovery type and old errors are retained under Advanced for audit only."
   },
   "table": {
     "path": "Path",
@@ -88,11 +96,19 @@
     "duration": "Duration",
     "completed": "Completed",
     "remote_verified": "Remote verified",
-    "error": "Error"
+    "error": "Error",
+    "final_status": "Final status",
+    "action": "Action",
+    "current_generation": "Current generation",
+    "current_state": "Current state"
   },
   "advanced": {
     "generation": "Generation",
-    "final_event": "Final event"
+    "final_event": "Final event",
+    "historical_result": "Historical result",
+    "historical_recovery": "Historical recovery",
+    "historical_error": "Historical error",
+    "current_recovery": "Current recovery"
   },
   "state": {
     "active": "Active",
@@ -147,5 +163,25 @@
     "saved_restart": "Saved. Restart required for:",
     "saved_active": "Saved and active.",
     "saved_notice": "WebDAV Writeback settings saved"
+  },
+  "status": {
+    "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload",
+    "reupload_receiving": "Cloud Sync re-upload receiving",
+    "reupload_received": "Cloud Sync re-upload received",
+    "reupload_uploading": "Re-upload syncing to provider",
+    "reupload_verifying": "Re-upload verifying provider",
+    "recovered": "Recovered",
+    "automatic_recovery": "Automatic recovery",
+    "completed": "Completed",
+    "deleted": "Deleted",
+    "remote_missing": "Remote missing",
+    "queued": "Queued",
+    "uploading": "Uploading",
+    "verifying": "Verifying",
+    "receiving": "Receiving"
+  },
+  "action": {
+    "restart_cloudsync": "Restart Cloud Sync task",
+    "none": "No action"
   }
 }
