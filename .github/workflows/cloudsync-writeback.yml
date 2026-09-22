@@ -58,6 +58,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx src/lang/en/entry.ts src/lang/en/webdav_writeback.json src/lang/zh-CN/index.json src/lang/zh-CN/webdav_writeback.json
+          git add -f src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx src/lang/en/entry.ts src/lang/en/webdav_writeback.json src/lang/zh-CN/index.json src/lang/zh-CN/webdav_writeback.json
           git commit -m "[skip ci] style(manage): format writeback frontend"
           git push
