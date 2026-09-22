@@ -1075,10 +1075,6 @@ const WebDAVWriteback = () => {
           />
         </HStack>
 
-        <Text size="sm" color="$neutral10">
-          {t("webdav_writeback.active.description")}
-        </Text>
-
         <Box w="$full" overflowX="auto">
           <Table highlightOnHover dense>
             <Thead>
