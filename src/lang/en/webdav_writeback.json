@@ -109,7 +109,8 @@
     "final_status": "Final status",
     "action": "Action",
     "current_generation": "Current generation",
-    "current_state": "Current state"
+    "current_state": "Current state",
+    "progress": "Progress"
   },
   "advanced": {
     "generation": "Generation",

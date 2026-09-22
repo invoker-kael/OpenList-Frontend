@@ -109,7 +109,8 @@
     "final_status": "最终状态",
     "action": "需要操作",
     "current_generation": "当前代次",
-    "current_state": "当前状态"
+    "current_state": "当前状态",
+    "progress": "进度"
   },
   "advanced": {
     "generation": "代次",

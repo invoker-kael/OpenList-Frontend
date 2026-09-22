@@ -77,6 +77,8 @@ type ActiveRow = {
   name: string
   is_dir: boolean
   size: number
+  received_bytes?: number
+  provider_uploaded_bytes?: number
   client_state: string
   provider_state: string
   effective_status: string
@@ -396,6 +398,23 @@ const WebDAVWriteback = () => {
 
   const cloudSyncStatusLabel = (value?: string) =>
     t(`webdav_writeback.cloudsync_status.${value || "syncing"}`)
+
+  const activeProgress = (row: ActiveRow) => {
+    if (row.size <= 0) return undefined
+    if (row.effective_status === "receiving") {
+      return Math.max(
+        0,
+        Math.min(100, ((row.received_bytes || 0) / row.size) * 100),
+      )
+    }
+    if (row.provider_state === "uploading") {
+      return Math.max(
+        0,
+        Math.min(100, ((row.provider_uploaded_bytes || 0) / row.size) * 100),
+      )
+    }
+    return undefined
+  }
 
   const run = async (fn: () => Promise<void>) => {
     try {
@@ -1081,6 +1100,7 @@ const WebDAVWriteback = () => {
               <Tr>
                 <Th>{t("webdav_writeback.table.path")}</Th>
                 <Th>{t("webdav_writeback.table.size")}</Th>
+                <Th>{t("webdav_writeback.table.progress")}</Th>
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
@@ -1109,7 +1129,7 @@ const WebDAVWriteback = () => {
                 when={activeRows().length}
                 fallback={
                   <Tr>
-                    <Td colSpan={12}>
+                    <Td colSpan={13}>
                       <Text color="$neutral10">
                         {t("webdav_writeback.active.empty")}
                       </Text>
@@ -1154,6 +1174,31 @@ const WebDAVWriteback = () => {
                         </details>
                       </Td>
                       <Td>{bytes(row.size)}</Td>
+                      <Td>
+                        <Show when={activeProgress(row) !== undefined} fallback="-">
+                          <VStack alignItems="start" spacing="$1" minW="$32">
+                            <Text size="xs">
+                              {Math.round(activeProgress(row) || 0)}%
+                            </Text>
+                            <Box
+                              w="$full"
+                              h="$2"
+                              bgColor="$neutral5"
+                              rounded="$full"
+                              overflow="hidden"
+                            >
+                              <Box
+                                h="$full"
+                                bgColor="$accent9"
+                                rounded="$full"
+                                style={{
+                                  width: `${activeProgress(row) || 0}%`,
+                                }}
+                              />
+                            </Box>
+                          </VStack>
+                        </Show>
+                      </Td>
                       <Td>
                         <Badge
                           colorScheme={
