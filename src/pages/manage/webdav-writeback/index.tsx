@@ -757,7 +757,10 @@ const WebDAVWriteback = () => {
 
   const historyUserStatusChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_final_status") },
-    { value: "processing", label: t("webdav_writeback.user_status.processing") },
+    {
+      value: "processing",
+      label: t("webdav_writeback.user_status.processing"),
+    },
     { value: "completed", label: t("webdav_writeback.user_status.completed") },
     {
       value: "action_required",
