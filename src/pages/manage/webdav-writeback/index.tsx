@@ -1316,16 +1316,20 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.advanced.historical_result")}{" "}
                             {translateValue("result", row.result)}
                             <br />
-                            {t("webdav_writeback.advanced.historical_recovery")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.historical_recovery",
+                            )}{" "}
                             {row.recovery_type
                               ? translateValue("recovery", row.recovery_type)
                               : "-"}
                             <br />
-                            {t("webdav_writeback.advanced.historical_error")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.historical_error",
+                            )}{" "}
                             {row.last_error || "-"}
                             <br />
-                            Retry {row.retry_count} · Verify {row.verify_count} ·{" "}
-                            {t("webdav_writeback.table.duration")}{" "}
+                            Retry {row.retry_count} · Verify {row.verify_count}{" "}
+                            · {t("webdav_writeback.table.duration")}{" "}
                             {duration(row.started_at, row.completed_at)}
                             <br />
                             Ack {time(row.ack_time)} · Durable{" "}
@@ -1334,7 +1338,9 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.advanced.final_event")}{" "}
                             {time(row.updated_at)}
                             <br />
-                            {t("webdav_writeback.advanced.current_recovery")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.current_recovery",
+                            )}{" "}
                             {row.current_recovery_state
                               ? translateValue(
                                   "recovery",
