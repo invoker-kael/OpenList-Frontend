@@ -750,8 +750,6 @@ const WebDAVWriteback = () => {
   ]
 
   const historyCloudSyncStatus = () => {
-    if (historyGroup() === "receiving") return "receiving"
-    if (historyGroup() === "syncing") return "syncing"
     if (historyGroup() === "completed") return "completed"
     if (historyGroup() === "waiting_reupload") return "waiting_reupload"
     if (historyFinalStatus() === "deleted") return "deleted"
@@ -760,11 +758,6 @@ const WebDAVWriteback = () => {
 
   const historyCloudSyncStatusChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_final_status") },
-    {
-      value: "receiving",
-      label: t("webdav_writeback.cloudsync_status.receiving"),
-    },
-    { value: "syncing", label: t("webdav_writeback.cloudsync_status.syncing") },
     {
       value: "completed",
       label: t("webdav_writeback.cloudsync_status.completed"),
@@ -781,8 +774,6 @@ const WebDAVWriteback = () => {
     setHistoryFinalStatus("all")
     setHistoryAction("all")
     switch (value) {
-      case "receiving":
-      case "syncing":
       case "completed":
       case "waiting_reupload":
         setHistoryGroup(value)
@@ -790,6 +781,18 @@ const WebDAVWriteback = () => {
       case "deleted":
         setHistoryFinalStatus("deleted")
         break
+    }
+  }
+
+  const historyTerminalStatus = (status?: string) => {
+    switch (status) {
+      case "completed":
+      case "recovered":
+        return "completed"
+      case "deleted":
+        return "deleted"
+      default:
+        return "waiting_reupload"
     }
   }
 
@@ -1064,11 +1067,6 @@ const WebDAVWriteback = () => {
 
       <Show when={tab() === "active"}>
         <HStack w="$full" spacing="$2" wrap="wrap">
-          <ChoiceSelect
-            value={activeState()}
-            onChange={setActiveState}
-            choices={activeChoices()}
-          />
           <Input
             maxW="$96"
             placeholder={t("webdav_writeback.common.filter_path")}
@@ -1085,24 +1083,29 @@ const WebDAVWriteback = () => {
           <Table highlightOnHover dense>
             <Thead>
               <Tr>
-                <For
-                  each={[
-                    "path",
-                    "size",
-                    "final_status",
-                    "action",
-                    "state",
-                    "recovery",
-                    "retry",
-                    "verify",
-                    "started",
-                    "updated",
-                    "retry_at",
-                    "error",
-                  ]}
-                >
-                  {(key) => <Th>{t(`webdav_writeback.table.${key}`)}</Th>}
-                </For>
+                <Th>{t("webdav_writeback.table.path")}</Th>
+                <Th>{t("webdav_writeback.table.size")}</Th>
+                <Th>
+                  <HeaderFilter
+                    label={t("webdav_writeback.table.final_status")}
+                    active={activeState() !== "active"}
+                  >
+                    <ChoiceSelect
+                      value={activeState()}
+                      onChange={setActiveState}
+                      choices={activeChoices()}
+                    />
+                  </HeaderFilter>
+                </Th>
+                <Th>{t("webdav_writeback.table.action")}</Th>
+                <Th>{t("webdav_writeback.table.state")}</Th>
+                <Th>{t("webdav_writeback.table.recovery")}</Th>
+                <Th>{t("webdav_writeback.table.retry")}</Th>
+                <Th>{t("webdav_writeback.table.verify")}</Th>
+                <Th>{t("webdav_writeback.table.started")}</Th>
+                <Th>{t("webdav_writeback.table.updated")}</Th>
+                <Th>{t("webdav_writeback.table.retry_at")}</Th>
+                <Th>{t("webdav_writeback.table.error")}</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -1110,7 +1113,7 @@ const WebDAVWriteback = () => {
                 when={activeRows().length}
                 fallback={
                   <Tr>
-                    <Td colSpan={10}>
+                    <Td colSpan={12}>
                       <Text color="$neutral10">
                         {t("webdav_writeback.active.empty")}
                       </Text>
@@ -1514,17 +1517,15 @@ const WebDAVWriteback = () => {
                         <Badge
                           colorScheme={
                             cloudSyncStatusColor(
-                              cloudSyncStatus(
+                              historyTerminalStatus(
                                 row.effective_status || row.result,
-                                row.operator_action,
                               ),
                             ) as any
                           }
                         >
                           {cloudSyncStatusLabel(
-                            cloudSyncStatus(
+                            historyTerminalStatus(
                               row.effective_status || row.result,
-                              row.operator_action,
                             ),
                           )}
                         </Badge>
