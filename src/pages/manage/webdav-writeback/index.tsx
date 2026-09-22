@@ -738,7 +738,10 @@ const WebDAVWriteback = () => {
 
   const activeChoices = (): Choice[] => [
     { value: "active", label: t("webdav_writeback.common.all") },
-    { value: "receiving", label: t("webdav_writeback.cloudsync_status.receiving") },
+    {
+      value: "receiving",
+      label: t("webdav_writeback.cloudsync_status.receiving"),
+    },
     { value: "syncing", label: t("webdav_writeback.cloudsync_status.syncing") },
     {
       value: "waiting_reupload",
