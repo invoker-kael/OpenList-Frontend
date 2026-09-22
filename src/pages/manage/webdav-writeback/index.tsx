@@ -138,13 +138,6 @@ type HistoryRow = {
   updated_at: string
 }
 
-type HistorySummary = {
-  total: number
-  remote_missing_or_rehydrate: number
-  results: Record<string, number>
-  recoveries: Record<string, number>
-}
-
 type Settings = {
   enabled: boolean
   reserve_free_space_mb: number
@@ -284,7 +277,6 @@ const WebDAVWriteback = () => {
   const [summary, setSummary] = createSignal<Summary>()
   const [activeRows, setActiveRows] = createSignal<ActiveRow[]>([])
   const [historyRows, setHistoryRows] = createSignal<HistoryRow[]>([])
-  const [historySummary, setHistorySummary] = createSignal<HistorySummary>()
   const [settings, setSettings] = createSignal<Settings>()
   const [error, setError] = createSignal("")
   const [lastUpdated, setLastUpdated] = createSignal<Date>()
@@ -401,12 +393,12 @@ const WebDAVWriteback = () => {
     if (historyBefore())
       params.set("before", new Date(historyBefore()).toISOString())
 
-    const [rows, totals] = await Promise.all([
+    const [rows, currentSummary] = await Promise.all([
       get<HistoryRow[]>(`/history?${params.toString()}`),
-      get<HistorySummary>("/history/summary"),
+      get<Summary>("/summary"),
     ])
     setHistoryRows(rows)
-    setHistorySummary(totals)
+    setSummary(currentSummary)
   }
 
   const loadSettings = async () => {
@@ -687,12 +679,6 @@ const WebDAVWriteback = () => {
       notify.success(t("webdav_writeback.settings.saved_notice"))
       setLastUpdated(new Date())
     })
-
-  const recoveryTotal = () =>
-    Object.values(historySummary()?.recoveries || {}).reduce(
-      (sum, count) => sum + count,
-      0,
-    )
 
   const activeChoices = (): Choice[] => [
     { value: "active", label: t("webdav_writeback.state.active") },
@@ -1236,20 +1222,23 @@ const WebDAVWriteback = () => {
           gap="$2"
         >
           <StatCard
-            label={t("webdav_writeback.history.rows")}
-            value={historySummary()?.total || 0}
+            label={t("webdav_writeback.overview.action_required")}
+            value={summary()?.needs_cloudsync_rehydrate || 0}
           />
           <StatCard
-            label={t("webdav_writeback.result.completed")}
-            value={historySummary()?.results?.completed || 0}
+            label={t("webdav_writeback.overview.automatic_recovery")}
+            value={summary()?.automatic_recovery || 0}
           />
           <StatCard
-            label={t("webdav_writeback.history.recovery_evidence")}
-            value={recoveryTotal()}
+            label={t("webdav_writeback.overview.remote_hash_mismatch")}
+            value={summary()?.remote_hash_mismatch || 0}
           />
           <StatCard
-            label={t("webdav_writeback.history.remote_missing_rehydrate")}
-            value={historySummary()?.remote_missing_or_rehydrate || 0}
+            label={t("webdav_writeback.overview.normal_completed")}
+            value={Math.max(
+              0,
+              stateCount("completed") - (summary()?.remote_hash_mismatch || 0),
+            )}
           />
         </SimpleGrid>
 
