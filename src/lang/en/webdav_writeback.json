@@ -1,0 +1,151 @@
+{
+  "title": "WebDAV Writeback",
+  "tabs": {
+    "overview": "Overview",
+    "active": "Active",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "common": {
+    "auto_refresh": "Auto refresh",
+    "updated": "Updated",
+    "unavailable": "Unavailable",
+    "unlimited": "Unlimited",
+    "advanced": "Advanced",
+    "loading": "Loading…",
+    "filter_path": "Filter path",
+    "all_results": "All results",
+    "all_recovery": "All recovery",
+    "any_error": "Any error",
+    "has_error": "Has error",
+    "no_error": "No error",
+    "after": "After",
+    "before": "Before"
+  },
+  "overview": {
+    "writeback_enabled": "Writeback enabled",
+    "receiving": "Receiving",
+    "pending_backlog": "Pending / backlog",
+    "durable_backlog": "Durable backlog",
+    "uploading": "Uploading",
+    "verifying": "Verifying",
+    "errors": "Errors",
+    "restart_recovery": "Restart recovery",
+    "missing_spool": "Missing spool",
+    "needs_rehydrate": "Needs CloudSync rehydrate",
+    "completed_cache": "Completed cache",
+    "receiving_reservation": "Receiving reservation",
+    "spool_disk_free": "Spool disk free",
+    "used": "used",
+    "total": "total",
+    "max_pending_spool": "Max pending spool",
+    "reserve_free_space": "Reserve free space"
+  },
+  "cache": {
+    "title": "Completed cache maintenance",
+    "description": "Releases only provider-verified completed .data spool files. Canonical state, History, active/recovery state and provider objects are preserved.",
+    "preview": "Preview cleanup",
+    "release": "Release completed cache",
+    "eligible": "Eligible",
+    "released": "Released",
+    "files": "files",
+    "preview_capped": "preview capped",
+    "confirm_release": "Release only safe provider-verified completed spool cache? Canonical state, History, recovery state and provider data are preserved."
+  },
+  "active": {
+    "description": "Live work, retry/recovery and errors. Completed generations remain in History; no synthetic upload percentage is generated.",
+    "empty": "No active writeback work."
+  },
+  "history": {
+    "rows": "History rows",
+    "recovery_evidence": "Recovery evidence",
+    "remote_missing_rehydrate": "Remote missing / rehydrate",
+    "delete_title": "Delete History",
+    "delete_description": "Deletes only WebDAVWritebackHistory rows. It cannot change current canonical state, delete spool/provider data, trigger re-upload, or affect PROPFIND.",
+    "delete_selected": "Delete selected",
+    "delete_by_class": "Delete by class",
+    "older_than_days": "Older than days",
+    "empty": "No matching History.",
+    "confirm_selected": "Delete selected History rows only. Count:",
+    "deleted_rows": "Deleted History rows:",
+    "success_age_required": "Successful History cleanup requires a positive age.",
+    "days": "days",
+    "confirm_class": "Delete History class:",
+    "confirm_class_safety": "Current canonical/spool/provider state is untouched."
+  },
+  "table": {
+    "path": "Path",
+    "generation": "Generation",
+    "size": "Size",
+    "state": "State",
+    "result": "Result",
+    "recovery": "Recovery",
+    "retry": "Retry",
+    "verify": "Verify",
+    "started": "Started",
+    "updated": "Updated",
+    "retry_at": "Retry at",
+    "duration": "Duration",
+    "completed": "Completed",
+    "remote_verified": "Remote verified",
+    "error": "Error"
+  },
+  "advanced": {
+    "generation": "Generation",
+    "final_event": "Final event"
+  },
+  "state": {
+    "active": "Active",
+    "receiving": "Receiving",
+    "queued": "Queued",
+    "uploading": "Uploading",
+    "verifying": "Verifying",
+    "completed": "Completed",
+    "deleted": "Deleted",
+    "error": "Errors"
+  },
+  "result": {
+    "completed": "Completed",
+    "deleted": "Deleted",
+    "remote_missing": "Remote missing",
+    "recovery_required": "Recovery required"
+  },
+  "recovery": {
+    "restart_recovery": "Restart recovery",
+    "missing_spool_provider_recovered": "Missing spool recovered from provider",
+    "cloudsync_rehydrate_required": "CloudSync rehydrate required"
+  },
+  "cleanup": {
+    "successful": "Successful History",
+    "recovery": "Recovery History",
+    "error": "Error History",
+    "remote_missing": "Remote missing"
+  },
+  "settings": {
+    "title": "Writeback settings",
+    "description": "SpoolDir is read-only. Worker topology and Enabled changes may require restart. CompletedRemoteProbeSeconds controls the freshness window for completed provider evidence; reconciliation behavior is unchanged.",
+    "enabled": "Enabled",
+    "enable_writeback": "Enable durable WebDAV writeback",
+    "read_only": "Read only",
+    "reserve_free_space_mb": "Reserve disk space (ReserveFreeSpaceMB)",
+    "max_pending_spool_mb": "Maximum pending spool (MaxPendingSpoolMB)",
+    "incoming_reservation_chunk_mb": "Incoming reservation chunk (IncomingReservationChunkMB)",
+    "workers": "Workers",
+    "upload_workers": "Upload workers",
+    "large_upload_workers": "Large upload workers",
+    "provider_probe_workers": "Provider probe workers",
+    "completed_cache_ttl_minutes": "Completed cache TTL minutes",
+    "completed_remote_probe_seconds": "Completed remote probe seconds",
+    "cloudsync_settle_millis": "CloudSync settle milliseconds",
+    "cloudsync_placeholder_millis": "CloudSync placeholder milliseconds",
+    "retry_initial_seconds": "Initial retry seconds",
+    "retry_max_seconds": "Maximum retry seconds",
+    "verify_interval_seconds": "Verify interval seconds",
+    "verify_attempts": "Verify attempts",
+    "unlimited_hint": "0 = unlimited",
+    "completed_cache_ttl_hint": "-1 = disable automatic completed-cache release",
+    "saved_restart": "Saved. Restart required for:",
+    "saved_active": "Saved and active.",
+    "saved_notice": "WebDAV Writeback settings saved"
+  }
+}

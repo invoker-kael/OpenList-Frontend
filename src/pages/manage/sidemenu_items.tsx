@@ -169,7 +169,7 @@ export const side_menu_items: SideMenuItem[] = [
     ],
   },
   {
-    title: "WebDAV Writeback",
+    title: "webdav_writeback.title",
     icon: BsCloudUploadFill,
     to: "/@manage/webdav-writeback",
     backend: ["go"],

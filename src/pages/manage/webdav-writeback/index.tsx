@@ -1,14 +1,40 @@
 import {
+  Badge,
   Box,
   Button,
+  Checkbox,
+  FormControl,
+  FormLabel,
   Heading,
+  HStack,
   Input,
+  Select,
+  SelectContent,
+  SelectListbox,
+  SelectOption,
+  SelectOptionText,
+  SelectTrigger,
+  SelectValue,
   SimpleGrid,
+  Switch as HopeSwitch,
+  Table,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   VStack,
 } from "@hope-ui/solid"
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
-import { useManageTitle } from "~/hooks"
+import {
+  createEffect,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js"
+import { useManageTitle, useT } from "~/hooks"
 import { Resp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
 
@@ -139,7 +165,13 @@ type HistoryCleanup = {
   deleted: number
 }
 
+type Choice = {
+  value: string
+  label: string
+}
+
 const API = "/admin/webdav-writeback"
+const AUTO_REFRESH_MS = 3000
 
 const unwrap = async <T,>(request: Promise<Resp<T>>): Promise<T> => {
   const resp = await request
@@ -180,8 +212,11 @@ const duration = (start?: string, end?: string) => {
   if (ms < 0) return "-"
   const seconds = Math.round(ms / 1000)
   if (seconds < 60) return `${seconds}s`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+  if (seconds < 3600)
+    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor(
+    (seconds % 3600) / 60,
+  )}m`
 }
 
 const StatCard = (props: {
@@ -190,7 +225,7 @@ const StatCard = (props: {
   hint?: string
 }) => (
   <Box
-    bgColor="$background"
+    w="$full"
     borderWidth="1px"
     borderColor="$neutral6"
     rounded="$lg"
@@ -210,22 +245,36 @@ const StatCard = (props: {
   </Box>
 )
 
-const Field = (props: { label: string; children: any; hint?: string }) => (
-  <Box>
-    <Text size="sm" mb="$1">
-      {props.label}
-    </Text>
-    {props.children}
-    <Show when={props.hint}>
-      <Text size="xs" color="$neutral10" mt="$1">
-        {props.hint}
-      </Text>
-    </Show>
-  </Box>
+const ChoiceSelect = (props: {
+  value: string
+  onChange: (value: string) => void
+  choices: Choice[]
+  minW?: string
+}) => (
+  <Select
+    value={props.value}
+    onChange={(value) => props.onChange((value as string) || "")}
+  >
+    <SelectTrigger minW={props.minW || "$48"}>
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectListbox>
+        <For each={props.choices}>
+          {(choice) => (
+            <SelectOption value={choice.value}>
+              <SelectOptionText>{choice.label}</SelectOptionText>
+            </SelectOption>
+          )}
+        </For>
+      </SelectListbox>
+    </SelectContent>
+  </Select>
 )
 
 const WebDAVWriteback = () => {
-  useManageTitle("WebDAV Writeback")
+  const t = useT()
+  useManageTitle("webdav_writeback.title")
 
   const [tab, setTab] = createSignal<Tab>("overview")
   const [summary, setSummary] = createSignal<Summary>()
@@ -234,6 +283,8 @@ const WebDAVWriteback = () => {
   const [historySummary, setHistorySummary] = createSignal<HistorySummary>()
   const [settings, setSettings] = createSignal<Settings>()
   const [error, setError] = createSignal("")
+  const [lastUpdated, setLastUpdated] = createSignal<Date>()
+  const [refreshing, setRefreshing] = createSignal(false)
   const [cacheStatus, setCacheStatus] = createSignal("")
   const [historyStatus, setHistoryStatus] = createSignal("")
   const [settingsStatus, setSettingsStatus] = createSignal("")
@@ -242,15 +293,39 @@ const WebDAVWriteback = () => {
   const [activeSearch, setActiveSearch] = createSignal("")
 
   const [historySearch, setHistorySearch] = createSignal("")
-  const [historyResult, setHistoryResult] = createSignal("")
-  const [historyRecovery, setHistoryRecovery] = createSignal("")
-  const [historyError, setHistoryError] = createSignal("")
+  const [historyResult, setHistoryResult] = createSignal("all")
+  const [historyRecovery, setHistoryRecovery] = createSignal("all")
+  const [historyError, setHistoryError] = createSignal("all")
   const [historyAfter, setHistoryAfter] = createSignal("")
   const [historyBefore, setHistoryBefore] = createSignal("")
   const [historyLimit, setHistoryLimit] = createSignal("200")
   const [selectedHistory, setSelectedHistory] = createSignal<number[]>([])
   const [cleanupClass, setCleanupClass] = createSignal("successful")
   const [cleanupDays, setCleanupDays] = createSignal(30)
+
+  const translateValue = (
+    group: "state" | "result" | "recovery" | "cleanup",
+    value?: string,
+  ) => (value ? t(`webdav_writeback.${group}.${value}`, undefined, value) : "-")
+
+  const stateColor = (value?: string) => {
+    switch (value) {
+      case "completed":
+        return "success"
+      case "uploading":
+      case "verifying":
+      case "receiving":
+        return "info"
+      case "error":
+      case "recovery_required":
+      case "remote_missing":
+        return "danger"
+      case "queued":
+        return "warning"
+      default:
+        return "neutral"
+    }
+  }
 
   const run = async (fn: () => Promise<void>) => {
     try {
@@ -279,9 +354,11 @@ const WebDAVWriteback = () => {
   const loadHistory = async () => {
     const params = new URLSearchParams({ limit: historyLimit() })
     if (historySearch().trim()) params.set("q", historySearch().trim())
-    if (historyResult()) params.set("result", historyResult())
-    if (historyRecovery()) params.set("recovery", historyRecovery())
-    if (historyError()) params.set("has_error", historyError())
+    if (historyResult() !== "all") params.set("result", historyResult())
+    if (historyRecovery() !== "all")
+      params.set("recovery", historyRecovery())
+    if (historyError() !== "all")
+      params.set("has_error", historyError())
     if (historyAfter())
       params.set("after", new Date(historyAfter()).toISOString())
     if (historyBefore())
@@ -293,65 +370,102 @@ const WebDAVWriteback = () => {
     ])
     setHistoryRows(rows)
     setHistorySummary(totals)
-    setSelectedHistory([])
   }
 
   const loadSettings = async () => {
     setSettings(await get<Settings>("/settings"))
   }
 
-  const refreshCurrent = () =>
-    run(async () => {
-      await loadOverview()
-      if (tab() === "active") await loadActive()
-      if (tab() === "history") await loadHistory()
-      if (tab() === "settings") await loadSettings()
-    })
-
-  const changeTab = (next: Tab) => {
-    setTab(next)
-    void run(async () => {
-      await loadOverview()
-      if (next === "active") await loadActive()
-      if (next === "history") await loadHistory()
-      if (next === "settings") await loadSettings()
-    })
+  const refreshVisible = async () => {
+    if (refreshing() || document.visibilityState !== "visible") return
+    setRefreshing(true)
+    try {
+      switch (tab()) {
+        case "overview":
+          await loadOverview()
+          break
+        case "active":
+          await Promise.all([loadOverview(), loadActive()])
+          break
+        case "history":
+          await loadHistory()
+          break
+        case "settings":
+          return
+      }
+      setLastUpdated(new Date())
+    } finally {
+      setRefreshing(false)
+    }
   }
 
+  createEffect(() => {
+    const currentTab = tab()
+    if (currentTab === "active") {
+      activeState()
+      activeSearch()
+    } else if (currentTab === "history") {
+      historySearch()
+      historyResult()
+      historyRecovery()
+      historyError()
+      historyAfter()
+      historyBefore()
+      historyLimit()
+    }
+
+    const timer = window.setTimeout(() => {
+      void run(async () => {
+        if (currentTab === "settings") {
+          await loadSettings()
+          setLastUpdated(new Date())
+          return
+        }
+        await refreshVisible()
+      })
+    }, 250)
+    onCleanup(() => window.clearTimeout(timer))
+  })
+
   onMount(() => {
-    void run(loadOverview)
     const timer = window.setInterval(() => {
-      if (tab() === "overview") void run(loadOverview)
-      if (tab() === "active") void run(loadActive)
-    }, 3000)
-    onCleanup(() => window.clearInterval(timer))
+      void run(refreshVisible)
+    }, AUTO_REFRESH_MS)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void run(refreshVisible)
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+    onCleanup(() => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", onVisibility)
+    })
   })
 
   const previewCache = () =>
     run(async () => {
       const result = await get<CacheCleanup>("/cleanup/preview")
       setCacheStatus(
-        `Eligible ${result.eligible || 0} files / ${bytes(
-          result.eligible_bytes,
-        )}${result.truncated ? " (preview capped)" : ""}`,
+        `${t("webdav_writeback.cache.eligible")} ${result.eligible || 0} ${t(
+          "webdav_writeback.cache.files",
+        )} / ${bytes(result.eligible_bytes)}${
+          result.truncated
+            ? ` (${t("webdav_writeback.cache.preview_capped")})`
+            : ""
+        }`,
       )
     })
 
   const releaseCache = () => {
-    if (
-      !window.confirm(
-        "Release only safe provider-verified completed spool cache? Canonical state, History, recovery state and provider data are preserved.",
-      )
-    )
-      return
+    if (!window.confirm(t("webdav_writeback.cache.confirm_release"))) return
     void run(async () => {
       const result = await post<CacheCleanup>("/cleanup")
       setCacheStatus(
-        `Released ${result.released || 0} files / ${bytes(
-          result.released_bytes,
-        )}`,
+        `${t("webdav_writeback.cache.released")} ${result.released || 0} ${t(
+          "webdav_writeback.cache.files",
+        )} / ${bytes(result.released_bytes)}`,
       )
       await loadOverview()
+      setLastUpdated(new Date())
     })
   }
 
@@ -368,12 +482,20 @@ const WebDAVWriteback = () => {
   const deleteSelectedHistory = () => {
     const ids = selectedHistory()
     if (!ids.length) return
-    if (!window.confirm(`Delete ${ids.length} selected History rows only?`))
+    if (
+      !window.confirm(
+        `${t("webdav_writeback.history.confirm_selected")} ${ids.length}`,
+      )
+    )
       return
     void run(async () => {
       const result = await post<HistoryCleanup>("/history/cleanup", { ids })
-      setHistoryStatus(`Deleted ${result.deleted} History rows.`)
+      setHistoryStatus(
+        `${t("webdav_writeback.history.deleted_rows")} ${result.deleted}`,
+      )
+      setSelectedHistory([])
       await loadHistory()
+      setLastUpdated(new Date())
     })
   }
 
@@ -381,12 +503,19 @@ const WebDAVWriteback = () => {
     const cls = cleanupClass()
     const days = cleanupDays()
     if (cls === "successful" && days <= 0) {
-      setHistoryStatus("Successful History cleanup requires a positive age.")
+      setHistoryStatus(t("webdav_writeback.history.success_age_required"))
       return
     }
+    const age =
+      days > 0
+        ? ` · ${days} ${t("webdav_writeback.history.days")}`
+        : ""
     if (
       !window.confirm(
-        `Delete ${cls} History${days > 0 ? ` older than ${days} days` : ""}? Current canonical/spool/provider state is untouched.`,
+        `${t("webdav_writeback.history.confirm_class")} ${translateValue(
+          "cleanup",
+          cls,
+        )}${age}. ${t("webdav_writeback.history.confirm_class_safety")}`,
       )
     )
       return
@@ -395,8 +524,11 @@ const WebDAVWriteback = () => {
         class: cls,
         older_than_days: days,
       })
-      setHistoryStatus(`Deleted ${result.deleted} History rows.`)
+      setHistoryStatus(
+        `${t("webdav_writeback.history.deleted_rows")} ${result.deleted}`,
+      )
       await loadHistory()
+      setLastUpdated(new Date())
     })
   }
 
@@ -411,63 +543,83 @@ const WebDAVWriteback = () => {
     min: number
     hint?: string
   }> = [
-    { key: "reserve_free_space_mb", label: "ReserveFreeSpaceMB", min: 0 },
+    {
+      key: "reserve_free_space_mb",
+      label: "webdav_writeback.settings.reserve_free_space_mb",
+      min: 0,
+    },
     {
       key: "max_pending_spool_mb",
-      label: "MaxPendingSpoolMB",
+      label: "webdav_writeback.settings.max_pending_spool_mb",
       min: 0,
-      hint: "0 = unlimited",
+      hint: "webdav_writeback.settings.unlimited_hint",
     },
     {
       key: "incoming_reservation_chunk_mb",
-      label: "IncomingReservationChunkMB",
+      label: "webdav_writeback.settings.incoming_reservation_chunk_mb",
       min: 1,
     },
-    { key: "workers", label: "Workers", min: 1 },
-    { key: "upload_workers", label: "UploadWorkers", min: 1 },
+    {
+      key: "workers",
+      label: "webdav_writeback.settings.workers",
+      min: 1,
+    },
+    {
+      key: "upload_workers",
+      label: "webdav_writeback.settings.upload_workers",
+      min: 1,
+    },
     {
       key: "large_upload_workers",
-      label: "LargeUploadWorkers",
+      label: "webdav_writeback.settings.large_upload_workers",
       min: 1,
     },
     {
       key: "provider_probe_workers",
-      label: "ProviderProbeWorkers",
+      label: "webdav_writeback.settings.provider_probe_workers",
       min: 1,
     },
     {
       key: "completed_cache_ttl_minutes",
-      label: "CompletedCacheTTLMinutes",
+      label: "webdav_writeback.settings.completed_cache_ttl_minutes",
       min: -1,
-      hint: "-1 = disable automatic completed-cache release",
+      hint: "webdav_writeback.settings.completed_cache_ttl_hint",
     },
     {
       key: "completed_remote_probe_seconds",
-      label: "CompletedRemoteProbeSeconds",
+      label: "webdav_writeback.settings.completed_remote_probe_seconds",
       min: 0,
     },
     {
       key: "cloudsync_settle_millis",
-      label: "CloudSyncSettleMillis",
+      label: "webdav_writeback.settings.cloudsync_settle_millis",
       min: 0,
     },
     {
       key: "cloudsync_placeholder_millis",
-      label: "CloudSyncPlaceholderMillis",
+      label: "webdav_writeback.settings.cloudsync_placeholder_millis",
       min: 0,
     },
     {
       key: "retry_initial_seconds",
-      label: "RetryInitialSeconds",
+      label: "webdav_writeback.settings.retry_initial_seconds",
       min: 1,
     },
-    { key: "retry_max_seconds", label: "RetryMaxSeconds", min: 1 },
+    {
+      key: "retry_max_seconds",
+      label: "webdav_writeback.settings.retry_max_seconds",
+      min: 1,
+    },
     {
       key: "verify_interval_seconds",
-      label: "VerifyIntervalSeconds",
+      label: "webdav_writeback.settings.verify_interval_seconds",
       min: 1,
     },
-    { key: "verify_attempts", label: "VerifyAttempts", min: 1 },
+    {
+      key: "verify_attempts",
+      label: "webdav_writeback.settings.verify_attempts",
+      min: 1,
+    },
   ]
 
   const updateNumericSetting = (key: NumericSetting, value: string) => {
@@ -488,11 +640,13 @@ const WebDAVWriteback = () => {
       const restart = saved.restart_required_fields || []
       setSettingsStatus(
         restart.length
-          ? `Saved. Restart required for: ${restart.join(", ")}`
-          : "Saved and active.",
+          ? `${t("webdav_writeback.settings.saved_restart")} ${restart.join(
+              ", ",
+            )}`
+          : t("webdav_writeback.settings.saved_active"),
       )
-      notify.success("WebDAV Writeback settings saved")
-      await loadOverview()
+      notify.success(t("webdav_writeback.settings.saved_notice"))
+      setLastUpdated(new Date())
     })
 
   const recoveryTotal = () =>
@@ -501,48 +655,82 @@ const WebDAVWriteback = () => {
       0,
     )
 
-  const tabButton = (value: Tab, label: string) => (
-    <Button
-      size="sm"
-      variant={tab() === value ? "solid" : "outline"}
-      onClick={() => changeTab(value)}
-    >
-      {label}
-    </Button>
-  )
+  const activeChoices = (): Choice[] => [
+    { value: "active", label: t("webdav_writeback.state.active") },
+    { value: "receiving", label: t("webdav_writeback.state.receiving") },
+    { value: "queued", label: t("webdav_writeback.state.queued") },
+    { value: "uploading", label: t("webdav_writeback.state.uploading") },
+    { value: "verifying", label: t("webdav_writeback.state.verifying") },
+    { value: "error", label: t("webdav_writeback.state.error") },
+  ]
+
+  const historyResultChoices = (): Choice[] => [
+    { value: "all", label: t("webdav_writeback.common.all_results") },
+    { value: "completed", label: t("webdav_writeback.result.completed") },
+    { value: "deleted", label: t("webdav_writeback.result.deleted") },
+    { value: "remote_missing", label: t("webdav_writeback.result.remote_missing") },
+    {
+      value: "recovery_required",
+      label: t("webdav_writeback.result.recovery_required"),
+    },
+  ]
+
+  const historyRecoveryChoices = (): Choice[] => [
+    { value: "all", label: t("webdav_writeback.common.all_recovery") },
+    {
+      value: "restart_recovery",
+      label: t("webdav_writeback.recovery.restart_recovery"),
+    },
+    {
+      value: "missing_spool_provider_recovered",
+      label: t("webdav_writeback.recovery.missing_spool_provider_recovered"),
+    },
+    {
+      value: "cloudsync_rehydrate_required",
+      label: t("webdav_writeback.recovery.cloudsync_rehydrate_required"),
+    },
+  ]
+
+  const errorChoices = (): Choice[] => [
+    { value: "all", label: t("webdav_writeback.common.any_error") },
+    { value: "true", label: t("webdav_writeback.common.has_error") },
+    { value: "false", label: t("webdav_writeback.common.no_error") },
+  ]
+
+  const cleanupChoices = (): Choice[] => [
+    { value: "successful", label: t("webdav_writeback.cleanup.successful") },
+    { value: "recovery", label: t("webdav_writeback.cleanup.recovery") },
+    { value: "error", label: t("webdav_writeback.cleanup.error") },
+    {
+      value: "remote_missing",
+      label: t("webdav_writeback.cleanup.remote_missing"),
+    },
+  ]
 
   return (
-    <VStack alignItems="stretch" spacing="$4">
-      <style>{`
-        .wb-toolbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-        .wb-control{border:1px solid var(--hope-colors-neutral7);border-radius:.375rem;background:var(--hope-colors-background);color:inherit;padding:.45rem .6rem;min-height:2.25rem}
-        .wb-table-wrap{overflow:auto;border:1px solid var(--hope-colors-neutral6);border-radius:.5rem;background:var(--hope-colors-background)}
-        .wb-table{border-collapse:collapse;width:100%;min-width:1050px}
-        .wb-table th,.wb-table td{padding:.55rem .65rem;border-bottom:1px solid var(--hope-colors-neutral5);text-align:left;vertical-align:top;font-size:.82rem}
-        .wb-table th{background:var(--hope-colors-neutral3);color:var(--hope-colors-neutral11);white-space:nowrap}
-        .wb-path{max-width:36rem;word-break:break-all}
-        .wb-muted{color:var(--hope-colors-neutral10)}
-        .wb-error{color:var(--hope-colors-danger10)}
-        .wb-badge{display:inline-block;padding:.12rem .45rem;border-radius:999px;background:var(--hope-colors-neutral4);white-space:nowrap}
-        .wb-detail{max-width:40rem;margin-top:.25rem;color:var(--hope-colors-neutral10);font-size:.75rem;line-height:1.45}
-      `}</style>
-
-      <Box class="wb-toolbar">
-        <Heading size="xl" mr="auto">
-          WebDAV Writeback
-        </Heading>
-        <Button size="sm" variant="outline" onClick={refreshCurrent}>
-          Refresh
-        </Button>
-        <Show when={summary()}>
-          <Text size="xs" color="$neutral10">
-            Updated {time(summary()?.updated_at)}
-          </Text>
-        </Show>
-      </Box>
+    <VStack spacing="$3" alignItems="start" w="$full">
+      <HStack
+        w="$full"
+        justifyContent="space-between"
+        alignItems="center"
+        wrap="wrap"
+      >
+        <Heading size="xl">{t("webdav_writeback.title")}</Heading>
+        <HStack spacing="$2">
+          <Badge colorScheme="success">
+            {t("webdav_writeback.common.auto_refresh")} · 3s
+          </Badge>
+          <Show when={lastUpdated()}>
+            <Text size="xs" color="$neutral10">
+              {t("webdav_writeback.common.updated")} {time(lastUpdated()?.toISOString())}
+            </Text>
+          </Show>
+        </HStack>
+      </HStack>
 
       <Show when={error()}>
         <Box
+          w="$full"
           borderWidth="1px"
           borderColor="$danger7"
           bgColor="$danger3"
@@ -553,164 +741,203 @@ const WebDAVWriteback = () => {
         </Box>
       </Show>
 
-      <Box class="wb-toolbar">
-        {tabButton("overview", "Overview")}
-        {tabButton("active", "Active")}
-        {tabButton("history", "History")}
-        {tabButton("settings", "Settings")}
-      </Box>
+      <HStack spacing="$2" wrap="wrap">
+        <For
+          each={[
+            ["overview", "webdav_writeback.tabs.overview"],
+            ["active", "webdav_writeback.tabs.active"],
+            ["history", "webdav_writeback.tabs.history"],
+            ["settings", "webdav_writeback.tabs.settings"],
+          ] as const}
+        >
+          {(item) => (
+            <Button
+              colorScheme={tab() === item[0] ? "accent" : "neutral"}
+              variant={tab() === item[0] ? "solid" : "outline"}
+              onClick={() => setTab(item[0])}
+            >
+              {t(item[1])}
+            </Button>
+          )}
+        </For>
+      </HStack>
 
       <Show when={tab() === "overview"}>
-        <SimpleGrid columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }} gap="$2">
+        <SimpleGrid
+          w="$full"
+          columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }}
+          gap="$2"
+        >
           <StatCard
-            label="Writeback Enabled"
-            value={summary()?.enabled ? "Yes" : "No"}
+            label={t("webdav_writeback.overview.writeback_enabled")}
+            value={summary()?.enabled ? t("global.yes") : t("global.no")}
           />
-          <StatCard label="Receiving" value={summary()?.receiving || 0} />
           <StatCard
-            label="Pending / Backlog"
+            label={t("webdav_writeback.overview.receiving")}
+            value={summary()?.receiving || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.pending_backlog")}
             value={stateCount("queued") + stateCount("deleted")}
-            hint={`durable backlog ${bytes(summary()?.backlog_bytes)}`}
+            hint={`${t("webdav_writeback.overview.durable_backlog")} ${bytes(
+              summary()?.backlog_bytes,
+            )}`}
           />
-          <StatCard label="Uploading" value={stateCount("uploading")} />
-          <StatCard label="Verifying" value={stateCount("verifying")} />
-          <StatCard label="Errors" value={summary()?.errors || 0} />
           <StatCard
-            label="Restart Recovery"
+            label={t("webdav_writeback.overview.uploading")}
+            value={stateCount("uploading")}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.verifying")}
+            value={stateCount("verifying")}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.errors")}
+            value={summary()?.errors || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.restart_recovery")}
             value={summary()?.restart_recovery || 0}
           />
           <StatCard
-            label="Missing Spool"
+            label={t("webdav_writeback.overview.missing_spool")}
             value={summary()?.missing_spool || 0}
           />
           <StatCard
-            label="Needs CloudSync Rehydrate"
+            label={t("webdav_writeback.overview.needs_rehydrate")}
             value={summary()?.needs_cloudsync_rehydrate || 0}
           />
           <StatCard
-            label="Completed Cache"
+            label={t("webdav_writeback.overview.completed_cache")}
             value={bytes(summary()?.completed_cache_bytes)}
           />
           <StatCard
-            label="Receiving Reservation"
+            label={t("webdav_writeback.overview.receiving_reservation")}
             value={bytes(summary()?.receiving_reservation_bytes)}
           />
           <StatCard
-            label="Spool Disk Free"
+            label={t("webdav_writeback.overview.spool_disk_free")}
             value={
               summary()?.disk_error
-                ? "Unavailable"
+                ? t("webdav_writeback.common.unavailable")
                 : bytes(summary()?.disk_free_bytes)
             }
             hint={
               summary()?.disk_error ||
-              `used ${bytes(summary()?.disk_used_bytes)} / total ${bytes(
+              `${t("webdav_writeback.overview.used")} ${bytes(
+                summary()?.disk_used_bytes,
+              )} / ${t("webdav_writeback.overview.total")} ${bytes(
                 summary()?.disk_total_bytes,
               )}`
             }
           />
           <StatCard
-            label="MaxPendingSpool"
+            label={t("webdav_writeback.overview.max_pending_spool")}
             value={
               summary()?.max_pending_spool_bytes
                 ? bytes(summary()?.max_pending_spool_bytes)
-                : "Unlimited"
+                : t("webdav_writeback.common.unlimited")
             }
           />
           <StatCard
-            label="ReserveFreeSpace"
+            label={t("webdav_writeback.overview.reserve_free_space")}
             value={bytes(summary()?.reserve_free_space_bytes)}
           />
         </SimpleGrid>
 
-        <Box borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
+        <Box
+          w="$full"
+          borderWidth="1px"
+          borderColor="$neutral6"
+          rounded="$lg"
+          p="$3"
+        >
           <Heading size="base" mb="$1">
-            Completed cache maintenance
+            {t("webdav_writeback.cache.title")}
           </Heading>
           <Text size="sm" color="$neutral10" mb="$2">
-            Releases only provider-verified completed .data spool files. It
-            never deletes canonical rows, History, active queue/recovery state,
-            or provider objects.
+            {t("webdav_writeback.cache.description")}
           </Text>
-          <Box class="wb-toolbar">
-            <Button size="sm" variant="outline" onClick={previewCache}>
-              Preview cleanup
+          <HStack spacing="$2" wrap="wrap">
+            <Button variant="outline" onClick={previewCache}>
+              {t("webdav_writeback.cache.preview")}
             </Button>
-            <Button size="sm" onClick={releaseCache}>
-              Release completed cache
+            <Button onClick={releaseCache}>
+              {t("webdav_writeback.cache.release")}
             </Button>
             <Text size="sm">{cacheStatus()}</Text>
-          </Box>
+          </HStack>
         </Box>
       </Show>
 
       <Show when={tab() === "active"}>
-        <Box class="wb-toolbar">
-          <select
-            class="wb-control"
+        <HStack w="$full" spacing="$2" wrap="wrap">
+          <ChoiceSelect
             value={activeState()}
-            onChange={(e) => setActiveState(e.currentTarget.value)}
-          >
-            <option value="active">Active</option>
-            <option value="receiving">Receiving</option>
-            <option value="queued">Queued</option>
-            <option value="uploading">Uploading</option>
-            <option value="verifying">Verifying</option>
-            <option value="error">Errors</option>
-          </select>
+            onChange={setActiveState}
+            choices={activeChoices()}
+          />
           <Input
-            size="sm"
             maxW="$96"
-            placeholder="Filter path"
+            placeholder={t("webdav_writeback.common.filter_path")}
             value={activeSearch()}
             onInput={(e) => setActiveSearch(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === "Enter" && void run(loadActive)}
           />
-          <Button size="sm" onClick={() => void run(loadActive)}>
-            Refresh Active
-          </Button>
-        </Box>
+        </HStack>
+
         <Text size="sm" color="$neutral10">
-          Live work, retry/recovery and errors only. Completed generations are
-          retained in History; no synthetic upload percentage is generated.
+          {t("webdav_writeback.active.description")}
         </Text>
-        <div class="wb-table-wrap">
-          <table class="wb-table">
-            <thead>
-              <tr>
-                <th>Path</th>
-                <th>Size</th>
-                <th>State</th>
-                <th>Recovery</th>
-                <th>Retry</th>
-                <th>Verify</th>
-                <th>Started</th>
-                <th>Updated</th>
-                <th>Retry At</th>
-                <th>Error</th>
-              </tr>
-            </thead>
-            <tbody>
+
+        <Box w="$full" overflowX="auto">
+          <Table highlightOnHover dense>
+            <Thead>
+              <Tr>
+                <For
+                  each={[
+                    "path",
+                    "size",
+                    "state",
+                    "recovery",
+                    "retry",
+                    "verify",
+                    "started",
+                    "updated",
+                    "retry_at",
+                    "error",
+                  ]}
+                >
+                  {(key) => <Th>{t(`webdav_writeback.table.${key}`)}</Th>}
+                </For>
+              </Tr>
+            </Thead>
+            <Tbody>
               <Show
                 when={activeRows().length}
                 fallback={
-                  <tr>
-                    <td colSpan={10} class="wb-muted">
-                      No active writeback work.
-                    </td>
-                  </tr>
+                  <Tr>
+                    <Td colSpan={10}>
+                      <Text color="$neutral10">
+                        {t("webdav_writeback.active.empty")}
+                      </Text>
+                    </Td>
+                  </Tr>
                 }
               >
                 <For each={activeRows()}>
                   {(row) => (
-                    <tr>
-                      <td class="wb-path">
-                        <strong>{row.path}</strong>
+                    <Tr>
+                      <Td>
+                        <Text maxW="$96" css={{ wordBreak: "break-all" }}>
+                          {row.path}
+                        </Text>
                         <details>
-                          <summary>Advanced</summary>
-                          <div class="wb-detail">
-                            Generation {row.generation} · Canonical{" "}
-                            {row.client_state || "-"} · ETag {row.etag || "-"}
+                          <summary>{t("webdav_writeback.common.advanced")}</summary>
+                          <Text size="xs" color="$neutral10">
+                            {t("webdav_writeback.advanced.generation")}{" "}
+                            {row.generation} · Canonical {row.client_state || "-"}
+                            <br />
+                            ETag {row.etag || "-"}
                             <br />
                             RemoteGeneration {row.remote_generation} ·
                             RemoteVerified {time(row.remote_verified_at)}
@@ -720,212 +947,216 @@ const WebDAVWriteback = () => {
                             RemoteSHA1 {row.remote_sha1 || "-"}
                             <br />
                             RemoteObjectID {row.remote_object_id || "-"}
-                          </div>
+                          </Text>
                         </details>
-                      </td>
-                      <td>{bytes(row.size)}</td>
-                      <td>
-                        <span class="wb-badge">
-                          {row.provider_state || "-"}
-                        </span>
-                      </td>
-                      <td>{row.recovery_state || "-"}</td>
-                      <td>{row.retry_count}</td>
-                      <td>{row.verify_count}</td>
-                      <td>{time(row.started_at)}</td>
-                      <td>{time(row.updated_at)}</td>
-                      <td>{time(row.retry_at)}</td>
-                      <td class="wb-error">{row.last_error}</td>
-                    </tr>
+                      </Td>
+                      <Td>{bytes(row.size)}</Td>
+                      <Td>
+                        <Badge
+                          colorScheme={stateColor(row.provider_state) as any}
+                        >
+                          {translateValue("state", row.provider_state)}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        {row.recovery_state
+                          ? translateValue("recovery", row.recovery_state)
+                          : "-"}
+                      </Td>
+                      <Td>{row.retry_count}</Td>
+                      <Td>{row.verify_count}</Td>
+                      <Td>{time(row.started_at)}</Td>
+                      <Td>{time(row.updated_at)}</Td>
+                      <Td>{time(row.retry_at)}</Td>
+                      <Td>
+                        <Text color={row.last_error ? "$danger10" : undefined}>
+                          {row.last_error || "-"}
+                        </Text>
+                      </Td>
+                    </Tr>
                   )}
                 </For>
               </Show>
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </Box>
       </Show>
 
       <Show when={tab() === "history"}>
-        <Box class="wb-toolbar">
+        <HStack w="$full" spacing="$2" wrap="wrap">
           <Input
-            size="sm"
             maxW="$80"
-            placeholder="Filter path"
+            placeholder={t("webdav_writeback.common.filter_path")}
             value={historySearch()}
             onInput={(e) => setHistorySearch(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === "Enter" && void run(loadHistory)}
           />
-          <select
-            class="wb-control"
+          <ChoiceSelect
             value={historyResult()}
-            onChange={(e) => setHistoryResult(e.currentTarget.value)}
-          >
-            <option value="">All results</option>
-            <option value="completed">Completed</option>
-            <option value="deleted">Deleted</option>
-            <option value="remote_missing">Remote Missing</option>
-            <option value="recovery_required">Recovery Required</option>
-          </select>
-          <select
-            class="wb-control"
+            onChange={setHistoryResult}
+            choices={historyResultChoices()}
+          />
+          <ChoiceSelect
             value={historyRecovery()}
-            onChange={(e) => setHistoryRecovery(e.currentTarget.value)}
-          >
-            <option value="">All recovery</option>
-            <option value="restart_recovery">Restart recovery</option>
-            <option value="missing_spool_provider_recovered">
-              Missing spool recovered
-            </option>
-            <option value="cloudsync_rehydrate_required">
-              CloudSync rehydrate required
-            </option>
-          </select>
-          <select
-            class="wb-control"
+            onChange={setHistoryRecovery}
+            choices={historyRecoveryChoices()}
+          />
+          <ChoiceSelect
             value={historyError()}
-            onChange={(e) => setHistoryError(e.currentTarget.value)}
-          >
-            <option value="">Any error</option>
-            <option value="true">Has Error</option>
-            <option value="false">No Error</option>
-          </select>
-          <input
-            class="wb-control"
+            onChange={setHistoryError}
+            choices={errorChoices()}
+          />
+          <Input
             type="datetime-local"
             value={historyAfter()}
             onInput={(e) => setHistoryAfter(e.currentTarget.value)}
-            title="After"
+            aria-label={t("webdav_writeback.common.after")}
           />
-          <input
-            class="wb-control"
+          <Input
             type="datetime-local"
             value={historyBefore()}
             onInput={(e) => setHistoryBefore(e.currentTarget.value)}
-            title="Before"
+            aria-label={t("webdav_writeback.common.before")}
           />
-          <select
-            class="wb-control"
+          <ChoiceSelect
             value={historyLimit()}
-            onChange={(e) => setHistoryLimit(e.currentTarget.value)}
-          >
-            <option value="100">100</option>
-            <option value="200">200</option>
-            <option value="500">500</option>
-          </select>
-          <Button size="sm" onClick={() => void run(loadHistory)}>
-            Refresh History
-          </Button>
-        </Box>
+            onChange={setHistoryLimit}
+            minW="$24"
+            choices={["100", "200", "500"].map((value) => ({
+              value,
+              label: value,
+            }))}
+          />
+        </HStack>
 
-        <SimpleGrid columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }} gap="$2">
-          <StatCard label="History rows" value={historySummary()?.total || 0} />
+        <SimpleGrid
+          w="$full"
+          columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }}
+          gap="$2"
+        >
           <StatCard
-            label="Completed"
+            label={t("webdav_writeback.history.rows")}
+            value={historySummary()?.total || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.result.completed")}
             value={historySummary()?.results?.completed || 0}
           />
-          <StatCard label="Recovery evidence" value={recoveryTotal()} />
           <StatCard
-            label="Remote missing / rehydrate"
+            label={t("webdav_writeback.history.recovery_evidence")}
+            value={recoveryTotal()}
+          />
+          <StatCard
+            label={t("webdav_writeback.history.remote_missing_rehydrate")}
             value={historySummary()?.remote_missing_or_rehydrate || 0}
           />
         </SimpleGrid>
 
-        <Box borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
+        <Box
+          w="$full"
+          borderWidth="1px"
+          borderColor="$neutral6"
+          rounded="$lg"
+          p="$3"
+        >
           <Heading size="base" mb="$1">
-            Delete History
+            {t("webdav_writeback.history.delete_title")}
           </Heading>
           <Text size="sm" color="$neutral10" mb="$2">
-            Deletes only WebDAVWritebackHistory rows. It cannot change the
-            current generation/canonical state, delete spool/provider data,
-            trigger re-upload, or affect PROPFIND.
+            {t("webdav_writeback.history.delete_description")}
           </Text>
-          <Box class="wb-toolbar">
+          <HStack spacing="$2" wrap="wrap">
             <Button
-              size="sm"
               colorScheme="danger"
               variant="outline"
+              disabled={!selectedHistory().length}
               onClick={deleteSelectedHistory}
             >
-              Delete selected ({selectedHistory().length})
+              {t("webdav_writeback.history.delete_selected")} (
+              {selectedHistory().length})
             </Button>
-            <select
-              class="wb-control"
+            <ChoiceSelect
               value={cleanupClass()}
-              onChange={(e) => setCleanupClass(e.currentTarget.value)}
-            >
-              <option value="successful">Successful History</option>
-              <option value="recovery">Recovery History</option>
-              <option value="error">Error History</option>
-              <option value="remote_missing">Remote Missing</option>
-            </select>
-            <input
-              class="wb-control"
+              onChange={setCleanupClass}
+              choices={cleanupChoices()}
+            />
+            <Input
               type="number"
               min="0"
+              maxW="$32"
               value={cleanupDays()}
               onInput={(e) => setCleanupDays(Number(e.currentTarget.value))}
-              title="Older than days; required for successful History"
+              aria-label={t("webdav_writeback.history.older_than_days")}
             />
             <Button
-              size="sm"
               colorScheme="danger"
               variant="outline"
               onClick={deleteHistoryClass}
             >
-              Delete by class
+              {t("webdav_writeback.history.delete_by_class")}
             </Button>
             <Text size="sm">{historyStatus()}</Text>
-          </Box>
+          </HStack>
         </Box>
 
-        <div class="wb-table-wrap">
-          <table class="wb-table">
-            <thead>
-              <tr>
-                <th />
-                <th>Path</th>
-                <th>Generation</th>
-                <th>Size</th>
-                <th>Result</th>
-                <th>Recovery</th>
-                <th>Retry</th>
-                <th>Verify</th>
-                <th>Duration</th>
-                <th>Completed</th>
-                <th>Remote Verified</th>
-                <th>Error</th>
-              </tr>
-            </thead>
-            <tbody>
+        <Box w="$full" overflowX="auto">
+          <Table highlightOnHover dense>
+            <Thead>
+              <Tr>
+                <Th />
+                <For
+                  each={[
+                    "path",
+                    "generation",
+                    "size",
+                    "result",
+                    "recovery",
+                    "retry",
+                    "verify",
+                    "duration",
+                    "completed",
+                    "remote_verified",
+                    "error",
+                  ]}
+                >
+                  {(key) => <Th>{t(`webdav_writeback.table.${key}`)}</Th>}
+                </For>
+              </Tr>
+            </Thead>
+            <Tbody>
               <Show
                 when={historyRows().length}
                 fallback={
-                  <tr>
-                    <td colSpan={12} class="wb-muted">
-                      No matching History.
-                    </td>
-                  </tr>
+                  <Tr>
+                    <Td colSpan={12}>
+                      <Text color="$neutral10">
+                        {t("webdav_writeback.history.empty")}
+                      </Text>
+                    </Td>
+                  </Tr>
                 }
               >
                 <For each={historyRows()}>
                   {(row) => (
-                    <tr>
-                      <td>
-                        <input
-                          type="checkbox"
+                    <Tr>
+                      <Td>
+                        <Checkbox
                           checked={selectedHistory().includes(row.id)}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             toggleHistory(row.id, e.currentTarget.checked)
                           }
                         />
-                      </td>
-                      <td class="wb-path">
-                        <strong>{row.path}</strong>
+                      </Td>
+                      <Td>
+                        <Text maxW="$96" css={{ wordBreak: "break-all" }}>
+                          {row.path}
+                        </Text>
                         <details>
-                          <summary>Advanced</summary>
-                          <div class="wb-detail">
+                          <summary>{t("webdav_writeback.common.advanced")}</summary>
+                          <Text size="xs" color="$neutral10">
                             Ack {time(row.ack_time)} · Durable{" "}
-                            {time(row.durable_at)} · Final event{" "}
+                            {time(row.durable_at)}
+                            <br />
+                            {t("webdav_writeback.advanced.final_event")}{" "}
                             {time(row.updated_at)}
                             <br />
                             PayloadSHA1 {row.payload_sha1 || "-"}
@@ -933,78 +1164,94 @@ const WebDAVWriteback = () => {
                             RemoteSHA1 {row.remote_sha1 || "-"}
                             <br />
                             RemoteObjectID {row.remote_object_id || "-"}
-                          </div>
+                          </Text>
                         </details>
-                      </td>
-                      <td>{row.generation}</td>
-                      <td>{bytes(row.size)}</td>
-                      <td>
-                        <span class="wb-badge">{row.result || "-"}</span>
-                      </td>
-                      <td>{row.recovery_type || "-"}</td>
-                      <td>{row.retry_count}</td>
-                      <td>{row.verify_count}</td>
-                      <td>{duration(row.started_at, row.completed_at)}</td>
-                      <td>{time(row.completed_at)}</td>
-                      <td>{time(row.remote_verified_at)}</td>
-                      <td class="wb-error">{row.last_error}</td>
-                    </tr>
+                      </Td>
+                      <Td>{row.generation}</Td>
+                      <Td>{bytes(row.size)}</Td>
+                      <Td>
+                        <Badge colorScheme={stateColor(row.result) as any}>
+                          {translateValue("result", row.result)}
+                        </Badge>
+                      </Td>
+                      <Td>
+                        {row.recovery_type
+                          ? translateValue("recovery", row.recovery_type)
+                          : "-"}
+                      </Td>
+                      <Td>{row.retry_count}</Td>
+                      <Td>{row.verify_count}</Td>
+                      <Td>{duration(row.started_at, row.completed_at)}</Td>
+                      <Td>{time(row.completed_at)}</Td>
+                      <Td>{time(row.remote_verified_at)}</Td>
+                      <Td>
+                        <Text color={row.last_error ? "$danger10" : undefined}>
+                          {row.last_error || "-"}
+                        </Text>
+                      </Td>
+                    </Tr>
                   )}
                 </For>
               </Show>
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </Box>
       </Show>
 
       <Show when={tab() === "settings"}>
-        <Show when={settings()} fallback={<Text>Loading settings…</Text>}>
+        <Show
+          when={settings()}
+          fallback={<Text>{t("webdav_writeback.common.loading")}</Text>}
+        >
           {(cfg) => (
-            <VStack alignItems="stretch" spacing="$3">
+            <VStack w="$full" alignItems="start" spacing="$3">
               <Box
+                w="$full"
                 borderWidth="1px"
                 borderColor="$neutral6"
                 rounded="$lg"
                 p="$3"
               >
                 <Heading size="base" mb="$1">
-                  Writeback settings
+                  {t("webdav_writeback.settings.title")}
                 </Heading>
                 <Text size="sm" color="$neutral10" mb="$3">
-                  SpoolDir is read-only. Worker topology/Enabled changes may
-                  require restart. CompletedRemoteProbeSeconds controls how long
-                  released completed state can rely on fresh provider evidence;
-                  the reconciliation algorithm is unchanged.
+                  {t("webdav_writeback.settings.description")}
                 </Text>
 
                 <SimpleGrid
+                  w="$full"
                   columns={{ "@initial": 1, "@md": 2, "@xl": 3 }}
                   gap="$3"
                 >
-                  <Field label="Enabled">
-                    <label class="wb-control">
-                      <input
-                        type="checkbox"
-                        checked={cfg().enabled}
-                        onChange={(e) =>
-                          setSettings({
-                            ...cfg(),
-                            enabled: e.currentTarget.checked,
-                          })
-                        }
-                      />{" "}
-                      Enable durable WebDAV writeback
-                    </label>
-                  </Field>
-                  <Field label="SpoolDir" hint="Read only">
-                    <Input size="sm" value={cfg().spool_dir} readOnly />
-                  </Field>
+                  <FormControl>
+                    <FormLabel>{t("webdav_writeback.settings.enabled")}</FormLabel>
+                    <HopeSwitch
+                      checked={cfg().enabled}
+                      onChange={(e: Event) =>
+                        setSettings({
+                          ...cfg(),
+                          enabled: (e.currentTarget as HTMLInputElement).checked,
+                        })
+                      }
+                    >
+                      {t("webdav_writeback.settings.enable_writeback")}
+                    </HopeSwitch>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>SpoolDir</FormLabel>
+                    <Input value={cfg().spool_dir} readOnly />
+                    <Text size="xs" color="$neutral10" mt="$1">
+                      {t("webdav_writeback.settings.read_only")}
+                    </Text>
+                  </FormControl>
 
                   <For each={numericSettings}>
                     {(item) => (
-                      <Field label={item.label} hint={item.hint}>
+                      <FormControl>
+                        <FormLabel>{t(item.label)}</FormLabel>
                         <Input
-                          size="sm"
                           type="number"
                           min={item.min}
                           value={cfg()[item.key]}
@@ -1015,17 +1262,20 @@ const WebDAVWriteback = () => {
                             )
                           }
                         />
-                      </Field>
+                        <Show when={item.hint}>
+                          <Text size="xs" color="$neutral10" mt="$1">
+                            {t(item.hint!)}
+                          </Text>
+                        </Show>
+                      </FormControl>
                     )}
                   </For>
                 </SimpleGrid>
 
-                <Box class="wb-toolbar" mt="$3">
-                  <Button size="sm" onClick={saveSettings}>
-                    Save settings
-                  </Button>
+                <HStack mt="$3" spacing="$2" wrap="wrap">
+                  <Button onClick={saveSettings}>{t("global.save")}</Button>
                   <Text size="sm">{settingsStatus()}</Text>
-                </Box>
+                </HStack>
               </Box>
             </VStack>
           )}

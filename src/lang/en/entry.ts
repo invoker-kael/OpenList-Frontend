@@ -15,6 +15,7 @@ import shares from "./shares.json"
 import storages from "./storages.json"
 import tasks from "./tasks.json"
 import users from "./users.json"
+import webdav_writeback from "./webdav_writeback.json"
 
 export const dict = {
   br,
@@ -34,4 +35,5 @@ export const dict = {
   storages,
   tasks,
   users,
+  webdav_writeback,
 }

@@ -7,6 +7,10 @@ on:
     paths:
       - src/pages/manage/webdav-writeback/**
       - src/pages/manage/sidemenu_items.tsx
+      - src/lang/en/entry.ts
+      - src/lang/en/webdav_writeback.json
+      - src/lang/zh-CN/index.json
+      - src/lang/zh-CN/webdav_writeback.json
       - .github/workflows/cloudsync-writeback.yml
   workflow_dispatch:
 
@@ -28,7 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Format
-        run: pnpm exec prettier --write src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx
+        run: pnpm exec prettier --write src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx src/lang/en/entry.ts src/lang/en/webdav_writeback.json src/lang/zh-CN/index.json src/lang/zh-CN/webdav_writeback.json
+      - name: Prepare local i18n
+        run: node ./scripts/i18n.mjs
       - name: TypeScript check
         run: |
           set +e
@@ -36,7 +42,7 @@ jobs:
           status=$?
           set -e
           printf '%s\n' "$output"
-          if printf '%s\n' "$output" | grep -E 'src/pages/manage/(webdav-writeback|sidemenu_items\.tsx)'; then
+          if printf '%s\n' "$output" | grep -E 'src/pages/manage/(webdav-writeback|sidemenu_items\.tsx)|src/lang/(en|zh-CN)/(entry\.ts|webdav_writeback\.json|index\.json)'; then
             echo "TypeScript errors detected in WebDAV Writeback frontend files."
             exit 1
           fi
@@ -47,11 +53,11 @@ jobs:
         run: pnpm build
       - name: Commit formatter output
         run: |
-          if git diff --quiet -- src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx; then
+          if git diff --quiet -- src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx src/lang/en/entry.ts src/lang/en/webdav_writeback.json src/lang/zh-CN/index.json src/lang/zh-CN/webdav_writeback.json; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx
+          git add src/pages/manage/webdav-writeback/index.tsx src/pages/manage/sidemenu_items.tsx src/lang/en/entry.ts src/lang/en/webdav_writeback.json src/lang/zh-CN/index.json src/lang/zh-CN/webdav_writeback.json
           git commit -m "[skip ci] style(manage): format writeback frontend"
           git push

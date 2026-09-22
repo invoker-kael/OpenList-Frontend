@@ -1,0 +1,151 @@
+{
+  "title": "WebDAV 写回",
+  "tabs": {
+    "overview": "概览",
+    "active": "活动任务",
+    "history": "历史记录",
+    "settings": "设置"
+  },
+  "common": {
+    "auto_refresh": "自动刷新",
+    "updated": "更新时间",
+    "unavailable": "不可用",
+    "unlimited": "不限制",
+    "advanced": "高级信息",
+    "loading": "加载中…",
+    "filter_path": "筛选路径",
+    "all_results": "全部结果",
+    "all_recovery": "全部恢复类型",
+    "any_error": "全部错误状态",
+    "has_error": "有错误",
+    "no_error": "无错误",
+    "after": "开始时间",
+    "before": "结束时间"
+  },
+  "overview": {
+    "writeback_enabled": "写回已启用",
+    "receiving": "接收中",
+    "pending_backlog": "待处理 / 积压",
+    "durable_backlog": "持久化积压",
+    "uploading": "上传中",
+    "verifying": "验证中",
+    "errors": "错误",
+    "restart_recovery": "重启恢复",
+    "missing_spool": "本地缓存缺失",
+    "needs_rehydrate": "需要 Cloud Sync 重新上传",
+    "completed_cache": "已完成缓存",
+    "receiving_reservation": "接收预留空间",
+    "spool_disk_free": "缓存磁盘可用空间",
+    "used": "已用",
+    "total": "总计",
+    "max_pending_spool": "最大待处理缓存",
+    "reserve_free_space": "磁盘保留空间"
+  },
+  "cache": {
+    "title": "已完成缓存维护",
+    "description": "仅释放已经过远端验证的已完成 .data 缓存文件。不会删除 Canonical 状态、历史记录、活动/恢复状态或远端对象。",
+    "preview": "预览可清理缓存",
+    "release": "释放已完成缓存",
+    "eligible": "可清理",
+    "released": "已释放",
+    "files": "个文件",
+    "preview_capped": "预览已截断",
+    "confirm_release": "仅释放已通过远端验证的安全缓存？Canonical 状态、历史记录、恢复状态和远端数据都会保留。"
+  },
+  "active": {
+    "description": "仅显示实时任务、重试、恢复和错误。已完成 generation 保留在历史记录中，不生成虚假的上传百分比。",
+    "empty": "当前没有活动的写回任务。"
+  },
+  "history": {
+    "rows": "历史记录数",
+    "recovery_evidence": "恢复记录",
+    "remote_missing_rehydrate": "远端缺失 / 需重传",
+    "delete_title": "清理历史记录",
+    "delete_description": "只删除 WebDAVWritebackHistory 审计记录，不会改变当前 Canonical 状态、删除缓存/远端数据、触发重新上传或影响 PROPFIND。",
+    "delete_selected": "删除选中记录",
+    "delete_by_class": "按分类删除",
+    "older_than_days": "早于多少天",
+    "empty": "没有符合条件的历史记录。",
+    "confirm_selected": "仅删除选中的历史记录，数量：",
+    "deleted_rows": "已删除历史记录：",
+    "success_age_required": "清理成功记录时必须填写大于 0 的保留天数。",
+    "days": "天",
+    "confirm_class": "删除历史分类：",
+    "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响。"
+  },
+  "table": {
+    "path": "路径",
+    "generation": "代次",
+    "size": "大小",
+    "state": "状态",
+    "result": "结果",
+    "recovery": "恢复类型",
+    "retry": "重试",
+    "verify": "验证",
+    "started": "开始时间",
+    "updated": "更新时间",
+    "retry_at": "下次重试",
+    "duration": "耗时",
+    "completed": "完成时间",
+    "remote_verified": "远端验证时间",
+    "error": "错误"
+  },
+  "advanced": {
+    "generation": "代次",
+    "final_event": "最终事件"
+  },
+  "state": {
+    "active": "活动任务",
+    "receiving": "接收中",
+    "queued": "已排队",
+    "uploading": "上传中",
+    "verifying": "验证中",
+    "completed": "已完成",
+    "deleted": "已删除",
+    "error": "错误"
+  },
+  "result": {
+    "completed": "已完成",
+    "deleted": "已删除",
+    "remote_missing": "远端缺失",
+    "recovery_required": "需要恢复"
+  },
+  "recovery": {
+    "restart_recovery": "重启恢复",
+    "missing_spool_provider_recovered": "本地缓存缺失，已从远端恢复",
+    "cloudsync_rehydrate_required": "需要 Cloud Sync 重新上传"
+  },
+  "cleanup": {
+    "successful": "成功记录",
+    "recovery": "恢复记录",
+    "error": "错误记录",
+    "remote_missing": "远端缺失记录"
+  },
+  "settings": {
+    "title": "写回设置",
+    "description": "SpoolDir 为只读。Workers 拓扑和 Enabled 变更可能需要重启。CompletedRemoteProbeSeconds 控制已完成对象远端证据的新鲜度窗口，不改变现有一致性/确认算法。",
+    "enabled": "启用状态",
+    "enable_writeback": "启用持久化 WebDAV 写回",
+    "read_only": "只读",
+    "reserve_free_space_mb": "磁盘保留空间 (ReserveFreeSpaceMB)",
+    "max_pending_spool_mb": "最大待处理缓存 (MaxPendingSpoolMB)",
+    "incoming_reservation_chunk_mb": "接收预留分块 (IncomingReservationChunkMB)",
+    "workers": "工作线程 (Workers)",
+    "upload_workers": "上传线程 (UploadWorkers)",
+    "large_upload_workers": "大文件上传线程 (LargeUploadWorkers)",
+    "provider_probe_workers": "远端探测线程 (ProviderProbeWorkers)",
+    "completed_cache_ttl_minutes": "已完成缓存保留分钟数",
+    "completed_remote_probe_seconds": "已完成对象远端探测秒数",
+    "cloudsync_settle_millis": "Cloud Sync 收敛等待毫秒",
+    "cloudsync_placeholder_millis": "Cloud Sync 占位等待毫秒",
+    "retry_initial_seconds": "初始重试秒数",
+    "retry_max_seconds": "最大重试秒数",
+    "verify_interval_seconds": "验证间隔秒数",
+    "verify_attempts": "验证次数",
+    "unlimited_hint": "0 = 不限制",
+    "completed_cache_ttl_hint": "-1 = 禁用自动释放已完成缓存",
+    "saved_restart": "已保存，需要重启才能应用：",
+    "saved_active": "已保存并立即生效。",
+    "saved_notice": "WebDAV 写回设置已保存"
+  }
+}
