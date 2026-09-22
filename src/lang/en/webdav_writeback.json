@@ -27,7 +27,8 @@
     "action_required": "Action required",
     "no_action_required": "No action required",
     "generation": "Generation",
-    "reset_filters": "Reset filters"
+    "reset_filters": "Reset filters",
+    "auto_refresh_off": "Auto refresh off"
   },
   "overview": {
     "writeback_enabled": "Writeback enabled",
@@ -125,7 +126,8 @@
     "verifying": "Verifying",
     "completed": "Completed",
     "deleted": "Deleted",
-    "error": "Errors"
+    "error": "Errors",
+    "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload"
   },
   "result": {
     "completed": "Completed",

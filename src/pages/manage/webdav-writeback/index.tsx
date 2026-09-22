@@ -179,7 +179,7 @@ type Choice = {
 }
 
 const API = "/admin/webdav-writeback"
-const AUTO_REFRESH_MS = 3000
+const AUTO_REFRESH_CHOICES = ["1", "2", "3", "5", "10", "15", "20", "30", "45", "60"]
 
 const unwrap = async <T,>(request: Promise<Resp<T>>): Promise<T> => {
   const resp = await request
@@ -283,6 +283,8 @@ const WebDAVWriteback = () => {
   const [error, setError] = createSignal("")
   const [lastUpdated, setLastUpdated] = createSignal<Date>()
   const [refreshing, setRefreshing] = createSignal(false)
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = createSignal(true)
+  const [autoRefreshSeconds, setAutoRefreshSeconds] = createSignal("3")
   const [cacheStatus, setCacheStatus] = createSignal("")
   const [historyStatus, setHistoryStatus] = createSignal("")
   const [settingsStatus, setSettingsStatus] = createSignal("")
@@ -462,16 +464,23 @@ const WebDAVWriteback = () => {
     onCleanup(() => window.clearTimeout(timer))
   })
 
-  onMount(() => {
+  createEffect(() => {
+    const enabled = autoRefreshEnabled()
+    const seconds = Number(autoRefreshSeconds())
+    if (!enabled || !Number.isFinite(seconds) || seconds <= 0) return
     const timer = window.setInterval(() => {
       void run(refreshVisible)
-    }, AUTO_REFRESH_MS)
+    }, seconds * 1000)
+    onCleanup(() => window.clearInterval(timer))
+  })
+
+  onMount(() => {
     const onVisibility = () => {
-      if (document.visibilityState === "visible") void run(refreshVisible)
+      if (autoRefreshEnabled() && document.visibilityState === "visible")
+        void run(refreshVisible)
     }
     document.addEventListener("visibilitychange", onVisibility)
     onCleanup(() => {
-      window.clearInterval(timer)
       document.removeEventListener("visibilitychange", onVisibility)
     })
   })
@@ -814,9 +823,33 @@ const WebDAVWriteback = () => {
         wrap="wrap"
       >
         <Heading size="xl">{t("webdav_writeback.title")}</Heading>
-        <HStack spacing="$2">
-          <Badge colorScheme="success">
-            {t("webdav_writeback.common.auto_refresh")} · 3s
+        <HStack spacing="$2" wrap="wrap">
+          <HopeSwitch
+            checked={autoRefreshEnabled()}
+            onChange={(e: Event) =>
+              setAutoRefreshEnabled(
+                (e.currentTarget as HTMLInputElement).checked,
+              )
+            }
+          >
+            {t("webdav_writeback.common.auto_refresh")}
+          </HopeSwitch>
+          <ChoiceSelect
+            value={autoRefreshSeconds()}
+            onChange={setAutoRefreshSeconds}
+            minW="$28"
+            choices={AUTO_REFRESH_CHOICES.map((value) => ({
+              value,
+              label: value + "s",
+            }))}
+          />
+          <Badge colorScheme={autoRefreshEnabled() ? "success" : "neutral"}>
+            {autoRefreshEnabled()
+              ? t("webdav_writeback.common.auto_refresh") +
+                " · " +
+                autoRefreshSeconds() +
+                "s"
+              : t("webdav_writeback.common.auto_refresh_off")}
           </Badge>
           <Show when={lastUpdated()}>
             <Text size="xs" color="$neutral10">
