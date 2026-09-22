@@ -77,6 +77,7 @@
     "recovery_evidence": "恢复记录",
     "remote_missing_rehydrate": "远端缺失 / 需重传",
     "delete_title": "清理历史记录",
+    "maintenance_title": "历史维护",
     "delete_description": "只删除 WebDAVWritebackHistory 审计记录，不会改变当前 Canonical 状态、删除缓存/远端数据、触发重新上传或影响 PROPFIND。",
     "delete_selected": "删除选中记录",
     "delete_by_class": "按分类删除",
@@ -88,7 +89,7 @@
     "days": "天",
     "confirm_class": "删除历史分类：",
     "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响。",
-    "status_description": "“最终状态”是运维判断的主要依据。原始历史结果、恢复类型和旧错误仅保留在“高级信息”中用于审计。"
+    "status_description": "日常只看精简状态表即可。Generation、Provider 状态、Hash、重试次数和历史证据统一收进“高级信息”。"
   },
   "table": {
     "path": "路径",
