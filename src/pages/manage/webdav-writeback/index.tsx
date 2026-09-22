@@ -905,7 +905,9 @@ const WebDAVWriteback = () => {
           />
           <StatCard
             label={t("webdav_writeback.overview.normal_completed")}
-            value={stateCount("completed") - (summary()?.remote_hash_mismatch || 0)}
+            value={
+              stateCount("completed") - (summary()?.remote_hash_mismatch || 0)
+            }
           />
           <StatCard
             label={t("webdav_writeback.overview.completed_cache")}
@@ -1053,7 +1055,9 @@ const WebDAVWriteback = () => {
                             <br />
                             RemoteObjectID {row.remote_object_id || "-"}
                             <br />
-                            {t("webdav_writeback.advanced.resolution_reason")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.resolution_reason",
+                            )}{" "}
                             {row.resolution_reason
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
@@ -1346,7 +1350,9 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.advanced.generation")}{" "}
                             {row.generation}
                             <br />
-                            {t("webdav_writeback.advanced.historical_result")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.historical_result",
+                            )}{" "}
                             {translateValue("result", row.result)}
                             <br />
                             {t(
@@ -1361,7 +1367,9 @@ const WebDAVWriteback = () => {
                             )}{" "}
                             {row.last_error || "-"}
                             <br />
-                            {t("webdav_writeback.advanced.resolution_reason")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.resolution_reason",
+                            )}{" "}
                             {row.resolution_reason
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
