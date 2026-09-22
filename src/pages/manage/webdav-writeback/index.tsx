@@ -1287,32 +1287,6 @@ const WebDAVWriteback = () => {
           </details>
         </HStack>
 
-        <SimpleGrid
-          w="$full"
-          columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }}
-          gap="$2"
-        >
-          <StatCard
-            label={t("webdav_writeback.overview.action_required")}
-            value={summary()?.needs_cloudsync_rehydrate || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.automatic_recovery")}
-            value={summary()?.automatic_recovery || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.remote_hash_mismatch")}
-            value={summary()?.remote_hash_mismatch || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.normal_completed")}
-            value={Math.max(
-              0,
-              stateCount("completed") - (summary()?.remote_hash_mismatch || 0),
-            )}
-          />
-        </SimpleGrid>
-
         <Box
           w="$full"
           borderWidth="1px"
