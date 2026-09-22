@@ -169,6 +169,13 @@ export const side_menu_items: SideMenuItem[] = [
     ],
   },
   {
+    title: "WebDAV Writeback",
+    icon: BsCloudUploadFill,
+    to: "/@manage/webdav-writeback",
+    backend: ["go"],
+    component: lazy(() => import("./webdav-writeback")),
+  },
+  {
     title: "manage.sidemenu.users",
     icon: BsPersonCircle,
     to: "/@manage/users",
