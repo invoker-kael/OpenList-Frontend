@@ -1216,10 +1216,6 @@ const WebDAVWriteback = () => {
       </Show>
 
       <Show when={tab() === "history"}>
-        <Text size="sm" color="$neutral10">
-          {t("webdav_writeback.history.status_description")}
-        </Text>
-
         <HStack w="$full" spacing="$2" wrap="wrap">
           <Input
             maxW="$96"
@@ -1293,9 +1289,6 @@ const WebDAVWriteback = () => {
           <Heading size="base" mb="$1">
             {t("webdav_writeback.history.delete_title")}
           </Heading>
-          <Text size="sm" color="$neutral10" mb="$2">
-            {t("webdav_writeback.history.delete_description")}
-          </Text>
           <HStack spacing="$2" wrap="wrap">
             <Button
               colorScheme="danger"
