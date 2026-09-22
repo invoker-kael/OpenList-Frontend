@@ -178,10 +178,11 @@
     "saved_active": "Saved and active.",
     "saved_notice": "WebDAV Writeback settings saved"
   },
-  "user_status": {
-    "processing": "Processing",
+  "cloudsync_status": {
+    "receiving": "Receiving",
+    "syncing": "Syncing",
     "completed": "Completed",
-    "action_required": "Needs attention",
+    "waiting_reupload": "Waiting for Cloud Sync re-upload",
     "deleted": "Deleted"
   },
   "status": {

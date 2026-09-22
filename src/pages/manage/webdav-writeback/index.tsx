@@ -364,40 +364,38 @@ const WebDAVWriteback = () => {
     }
   }
 
-  const userStatus = (status?: string, action?: string) => {
-    if (action && action !== "none") return "action_required"
+  const cloudSyncStatus = (status?: string, action?: string) => {
+    if (action === "restart_cloudsync_required") return "waiting_reupload"
     switch (status) {
+      case "receiving":
+      case "reupload_receiving":
+        return "receiving"
       case "completed":
       case "recovered":
         return "completed"
       case "deleted":
         return "deleted"
-      case "waiting_cloudsync_reupload":
-      case "recovery_required":
-      case "remote_missing":
-      case "remote_hash_mismatch":
-      case "waiting_repair":
-        return "action_required"
       default:
-        return "processing"
+        return "syncing"
     }
   }
 
-  const userStatusColor = (value?: string) => {
+  const cloudSyncStatusColor = (value?: string) => {
     switch (value) {
       case "completed":
         return "success"
-      case "action_required":
+      case "waiting_reupload":
         return "danger"
-      case "processing":
+      case "receiving":
+      case "syncing":
         return "info"
       default:
         return "neutral"
     }
   }
 
-  const userStatusLabel = (value?: string) =>
-    t(`webdav_writeback.user_status.${value || "processing"}`)
+  const cloudSyncStatusLabel = (value?: string) =>
+    t(`webdav_writeback.cloudsync_status.${value || "syncing"}`)
 
   const run = async (fn: () => Promise<void>) => {
     try {
@@ -747,39 +745,37 @@ const WebDAVWriteback = () => {
     { value: "error", label: t("webdav_writeback.state.error") },
   ]
 
-  const historyUserStatus = () => {
-    if (historyAction() === "true") return "action_required"
+  const historyCloudSyncStatus = () => {
+    if (historyGroup() === "receiving") return "receiving"
+    if (historyGroup() === "syncing") return "syncing"
     if (historyGroup() === "completed") return "completed"
-    if (historyGroup() === "processing") return "processing"
+    if (historyGroup() === "waiting_reupload") return "waiting_reupload"
     if (historyFinalStatus() === "deleted") return "deleted"
     return "all"
   }
 
-  const historyUserStatusChoices = (): Choice[] => [
+  const historyCloudSyncStatusChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_final_status") },
+    { value: "receiving", label: t("webdav_writeback.cloudsync_status.receiving") },
+    { value: "syncing", label: t("webdav_writeback.cloudsync_status.syncing") },
+    { value: "completed", label: t("webdav_writeback.cloudsync_status.completed") },
     {
-      value: "processing",
-      label: t("webdav_writeback.user_status.processing"),
+      value: "waiting_reupload",
+      label: t("webdav_writeback.cloudsync_status.waiting_reupload"),
     },
-    { value: "completed", label: t("webdav_writeback.user_status.completed") },
-    {
-      value: "action_required",
-      label: t("webdav_writeback.user_status.action_required"),
-    },
-    { value: "deleted", label: t("webdav_writeback.user_status.deleted") },
+    { value: "deleted", label: t("webdav_writeback.cloudsync_status.deleted") },
   ]
 
-  const setHistoryUserStatus = (value: string) => {
+  const setHistoryCloudSyncStatus = (value: string) => {
     setHistoryGroup("all")
     setHistoryFinalStatus("all")
     setHistoryAction("all")
     switch (value) {
-      case "processing":
+      case "receiving":
+      case "syncing":
       case "completed":
+      case "waiting_reupload":
         setHistoryGroup(value)
-        break
-      case "action_required":
-        setHistoryAction("true")
         break
       case "deleted":
         setHistoryFinalStatus("deleted")
@@ -1152,16 +1148,16 @@ const WebDAVWriteback = () => {
                       <Td>
                         <Badge
                           colorScheme={
-                            userStatusColor(
-                              userStatus(
+                            cloudSyncStatusColor(
+                              cloudSyncStatus(
                                 row.effective_status || row.provider_state,
                                 row.operator_action,
                               ),
                             ) as any
                           }
                         >
-                          {userStatusLabel(
-                            userStatus(
+                          {cloudSyncStatusLabel(
+                            cloudSyncStatus(
                               row.effective_status || row.provider_state,
                               row.operator_action,
                             ),
@@ -1360,12 +1356,12 @@ const WebDAVWriteback = () => {
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
-                    active={historyUserStatus() !== "all"}
+                    active={historyCloudSyncStatus() !== "all"}
                   >
                     <ChoiceSelect
-                      value={historyUserStatus()}
-                      onChange={setHistoryUserStatus}
-                      choices={historyUserStatusChoices()}
+                      value={historyCloudSyncStatus()}
+                      onChange={setHistoryCloudSyncStatus}
+                      choices={historyCloudSyncStatusChoices()}
                     />
                   </HeaderFilter>
                 </Th>
@@ -1507,16 +1503,16 @@ const WebDAVWriteback = () => {
                       <Td>
                         <Badge
                           colorScheme={
-                            userStatusColor(
-                              userStatus(
+                            cloudSyncStatusColor(
+                              cloudSyncStatus(
                                 row.effective_status || row.result,
                                 row.operator_action,
                               ),
                             ) as any
                           }
                         >
-                          {userStatusLabel(
-                            userStatus(
+                          {cloudSyncStatusLabel(
+                            cloudSyncStatus(
                               row.effective_status || row.result,
                               row.operator_action,
                             ),
