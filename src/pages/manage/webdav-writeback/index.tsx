@@ -1175,7 +1175,10 @@ const WebDAVWriteback = () => {
                       </Td>
                       <Td>{bytes(row.size)}</Td>
                       <Td>
-                        <Show when={activeProgress(row) !== undefined} fallback="-">
+                        <Show
+                          when={activeProgress(row) !== undefined}
+                          fallback="-"
+                        >
                           <VStack alignItems="start" spacing="$1" minW="$32">
                             <Text size="xs">
                               {Math.round(activeProgress(row) || 0)}%
