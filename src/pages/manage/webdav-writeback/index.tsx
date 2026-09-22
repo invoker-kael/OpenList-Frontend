@@ -114,6 +114,8 @@ type HistoryRow = {
   started_at?: string
   ack_time?: string
   durable_at?: string
+  provider_upload_started_at?: string
+  provider_upload_completed_at?: string
   completed_at?: string
   result: string
   final_state: string
@@ -1374,8 +1376,19 @@ const WebDAVWriteback = () => {
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
                             <br />
-                            Retry {row.retry_count} · Verify {row.verify_count}{" "}
-                            · {t("webdav_writeback.table.duration")}{" "}
+                            Retry {row.retry_count} · Verify {row.verify_count}
+                            <br />
+                            {t(
+                              "webdav_writeback.advanced.provider_upload_duration",
+                            )}{" "}
+                            {duration(
+                              row.provider_upload_started_at,
+                              row.provider_upload_completed_at,
+                            )}
+                            {" · "}
+                            {t(
+                              "webdav_writeback.advanced.end_to_end_duration",
+                            )}{" "}
                             {duration(row.started_at, row.completed_at)}
                             <br />
                             Ack {time(row.ack_time)} · Durable{" "}

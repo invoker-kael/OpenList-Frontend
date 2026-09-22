@@ -113,7 +113,9 @@
     "historical_recovery": "Historical recovery",
     "historical_error": "Historical error",
     "current_recovery": "Current recovery",
-    "resolution_reason": "Resolution reason"
+    "resolution_reason": "Resolution reason",
+    "provider_upload_duration": "Provider upload",
+    "end_to_end_duration": "End-to-end"
   },
   "state": {
     "active": "Active",

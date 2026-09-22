@@ -113,7 +113,9 @@
     "historical_recovery": "历史恢复类型",
     "historical_error": "历史错误",
     "current_recovery": "当前恢复状态",
-    "resolution_reason": "收敛原因"
+    "resolution_reason": "收敛原因",
+    "provider_upload_duration": "单文件远端上传耗时",
+    "end_to_end_duration": "端到端总耗时"
   },
   "state": {
     "active": "活动任务",
