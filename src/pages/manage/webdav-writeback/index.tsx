@@ -364,28 +364,40 @@ const WebDAVWriteback = () => {
     }
   }
 
-  const statusColor = (value?: string) => {
-    switch (value) {
+  const userStatus = (status?: string, action?: string) => {
+    if (action && action !== "none") return "action_required"
+    switch (status) {
       case "completed":
       case "recovered":
-        return "success"
-      case "reupload_receiving":
-      case "reupload_received":
-      case "reupload_uploading":
-      case "reupload_verifying":
-        return "info"
-      case "automatic_recovery":
-      case "remote_hash_mismatch":
-      case "queued":
-        return "warning"
+        return "completed"
+      case "deleted":
+        return "deleted"
       case "waiting_cloudsync_reupload":
       case "recovery_required":
       case "remote_missing":
+      case "remote_hash_mismatch":
+      case "waiting_repair":
+        return "action_required"
+      default:
+        return "processing"
+    }
+  }
+
+  const userStatusColor = (value?: string) => {
+    switch (value) {
+      case "completed":
+        return "success"
+      case "action_required":
         return "danger"
+      case "processing":
+        return "info"
       default:
         return "neutral"
     }
   }
+
+  const userStatusLabel = (value?: string) =>
+    t(`webdav_writeback.user_status.${value || "processing"}`)
 
   const run = async (fn: () => Promise<void>) => {
     try {
@@ -735,44 +747,42 @@ const WebDAVWriteback = () => {
     { value: "error", label: t("webdav_writeback.state.error") },
   ]
 
-  const historyFinalStatusChoices = (): Choice[] => [
+  const historyUserStatus = () => {
+    if (historyAction() === "true") return "action_required"
+    if (historyGroup() === "completed") return "completed"
+    if (historyGroup() === "processing") return "processing"
+    if (historyFinalStatus() === "deleted") return "deleted"
+    return "all"
+  }
+
+  const historyUserStatusChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_final_status") },
+    { value: "processing", label: t("webdav_writeback.user_status.processing") },
+    { value: "completed", label: t("webdav_writeback.user_status.completed") },
     {
-      value: "waiting_cloudsync_reupload",
-      label: t("webdav_writeback.status.waiting_cloudsync_reupload"),
+      value: "action_required",
+      label: t("webdav_writeback.user_status.action_required"),
     },
-    {
-      value: "reupload_receiving",
-      label: t("webdav_writeback.status.reupload_receiving"),
-    },
-    {
-      value: "reupload_received",
-      label: t("webdav_writeback.status.reupload_received"),
-    },
-    {
-      value: "reupload_uploading",
-      label: t("webdav_writeback.status.reupload_uploading"),
-    },
-    {
-      value: "reupload_verifying",
-      label: t("webdav_writeback.status.reupload_verifying"),
-    },
-    { value: "recovered", label: t("webdav_writeback.status.recovered") },
-    {
-      value: "automatic_recovery",
-      label: t("webdav_writeback.status.automatic_recovery"),
-    },
-    {
-      value: "remote_hash_mismatch",
-      label: t("webdav_writeback.status.remote_hash_mismatch"),
-    },
-    { value: "completed", label: t("webdav_writeback.status.completed") },
-    { value: "deleted", label: t("webdav_writeback.status.deleted") },
-    {
-      value: "remote_missing",
-      label: t("webdav_writeback.status.remote_missing"),
-    },
+    { value: "deleted", label: t("webdav_writeback.user_status.deleted") },
   ]
+
+  const setHistoryUserStatus = (value: string) => {
+    setHistoryGroup("all")
+    setHistoryFinalStatus("all")
+    setHistoryAction("all")
+    switch (value) {
+      case "processing":
+      case "completed":
+        setHistoryGroup(value)
+        break
+      case "action_required":
+        setHistoryAction("true")
+        break
+      case "deleted":
+        setHistoryFinalStatus("deleted")
+        break
+    }
+  }
 
   const historyActionChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_actions") },
@@ -1138,11 +1148,20 @@ const WebDAVWriteback = () => {
                       <Td>{bytes(row.size)}</Td>
                       <Td>
                         <Badge
-                          colorScheme={statusColor(row.effective_status) as any}
+                          colorScheme={
+                            userStatusColor(
+                              userStatus(
+                                row.effective_status || row.provider_state,
+                                row.operator_action,
+                              ),
+                            ) as any
+                          }
                         >
-                          {translateValue(
-                            "status",
-                            row.effective_status || row.provider_state,
+                          {userStatusLabel(
+                            userStatus(
+                              row.effective_status || row.provider_state,
+                              row.operator_action,
+                            ),
                           )}
                         </Badge>
                       </Td>
@@ -1338,15 +1357,12 @@ const WebDAVWriteback = () => {
                 <Th>
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
-                    active={historyFinalStatus() !== "all"}
+                    active={historyUserStatus() !== "all"}
                   >
                     <ChoiceSelect
-                      value={historyFinalStatus()}
-                      onChange={(value) => {
-                        setHistoryGroup("all")
-                        setHistoryFinalStatus(value)
-                      }}
-                      choices={historyFinalStatusChoices()}
+                      value={historyUserStatus()}
+                      onChange={setHistoryUserStatus}
+                      choices={historyUserStatusChoices()}
                     />
                   </HeaderFilter>
                 </Th>
@@ -1421,6 +1437,12 @@ const WebDAVWriteback = () => {
                             )}{" "}
                             {translateValue("result", row.result)}
                             <br />
+                            {t("webdav_writeback.advanced.raw_status")}{" "}
+                            {translateValue(
+                              "status",
+                              row.effective_status || row.result,
+                            )}
+                            <br />
                             {t(
                               "webdav_writeback.advanced.historical_recovery",
                             )}{" "}
@@ -1481,11 +1503,20 @@ const WebDAVWriteback = () => {
                       </Td>
                       <Td>
                         <Badge
-                          colorScheme={statusColor(row.effective_status) as any}
+                          colorScheme={
+                            userStatusColor(
+                              userStatus(
+                                row.effective_status || row.result,
+                                row.operator_action,
+                              ),
+                            ) as any
+                          }
                         >
-                          {translateValue(
-                            "status",
-                            row.effective_status || row.result,
+                          {userStatusLabel(
+                            userStatus(
+                              row.effective_status || row.result,
+                              row.operator_action,
+                            ),
                           )}
                         </Badge>
                       </Td>

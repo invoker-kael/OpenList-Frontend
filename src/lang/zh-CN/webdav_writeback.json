@@ -115,6 +115,7 @@
     "generation": "代次",
     "final_event": "最终事件",
     "historical_result": "历史结果",
+    "raw_status": "内部状态",
     "historical_recovery": "历史恢复类型",
     "historical_error": "历史错误",
     "current_recovery": "当前恢复状态",
@@ -176,6 +177,12 @@
     "saved_restart": "已保存，需要重启才能应用：",
     "saved_active": "已保存并立即生效。",
     "saved_notice": "WebDAV 写回设置已保存"
+  },
+  "user_status": {
+    "processing": "处理中",
+    "completed": "已完成",
+    "action_required": "需要处理",
+    "deleted": "已删除"
   },
   "status": {
     "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",

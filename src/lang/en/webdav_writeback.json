@@ -115,6 +115,7 @@
     "generation": "Generation",
     "final_event": "Final event",
     "historical_result": "Historical result",
+    "raw_status": "Internal status",
     "historical_recovery": "Historical recovery",
     "historical_error": "Historical error",
     "current_recovery": "Current recovery",
@@ -176,6 +177,12 @@
     "saved_restart": "Saved. Restart required for:",
     "saved_active": "Saved and active.",
     "saved_notice": "WebDAV Writeback settings saved"
+  },
+  "user_status": {
+    "processing": "Processing",
+    "completed": "Completed",
+    "action_required": "Needs attention",
+    "deleted": "Deleted"
   },
   "status": {
     "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload",
