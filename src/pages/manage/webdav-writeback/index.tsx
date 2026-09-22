@@ -1258,11 +1258,6 @@ const WebDAVWriteback = () => {
                 onInput={(e) => setHistoryGeneration(e.currentTarget.value)}
               />
               <ChoiceSelect
-                value={historyCurrentState()}
-                onChange={setHistoryCurrentState}
-                choices={historyCurrentStateChoices()}
-              />
-              <ChoiceSelect
                 value={historyResult()}
                 onChange={setHistoryResult}
                 choices={historyResultChoices()}
@@ -1305,55 +1300,78 @@ const WebDAVWriteback = () => {
           </details>
         </HStack>
 
-        <details>
-          <summary style={{ cursor: "pointer", "white-space": "nowrap" }}>
-            {t("webdav_writeback.history.maintenance_title")} ▾
-          </summary>
-          <Box
-            w="$full"
-            mt="$2"
-            borderWidth="1px"
-            borderColor="$neutral6"
-            rounded="$lg"
-            p="$3"
-          >
-            <Text size="sm" color="$neutral10" mb="$2">
-              {t("webdav_writeback.history.delete_description")}
-            </Text>
-            <HStack spacing="$2" wrap="wrap">
-              <Button
-                colorScheme="danger"
-                variant="outline"
-                disabled={!selectedHistory().length}
-                onClick={deleteSelectedHistory}
-              >
-                {t("webdav_writeback.history.delete_selected")} (
-                {selectedHistory().length})
-              </Button>
-              <ChoiceSelect
-                value={cleanupClass()}
-                onChange={setCleanupClass}
-                choices={cleanupChoices()}
-              />
-              <Input
-                type="number"
-                min="0"
-                maxW="$32"
-                value={cleanupDays()}
-                onInput={(e) => setCleanupDays(Number(e.currentTarget.value))}
-                aria-label={t("webdav_writeback.history.older_than_days")}
-              />
-              <Button
-                colorScheme="danger"
-                variant="outline"
-                onClick={deleteHistoryClass}
-              >
-                {t("webdav_writeback.history.delete_by_class")}
-              </Button>
-              <Text size="sm">{historyStatus()}</Text>
-            </HStack>
-          </Box>
-        </details>
+        <SimpleGrid
+          w="$full"
+          columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }}
+          gap="$2"
+        >
+          <StatCard
+            label={t("webdav_writeback.overview.action_required")}
+            value={summary()?.needs_cloudsync_rehydrate || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.automatic_recovery")}
+            value={summary()?.automatic_recovery || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.remote_hash_mismatch")}
+            value={summary()?.remote_hash_mismatch || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.normal_completed")}
+            value={Math.max(
+              0,
+              stateCount("completed") - (summary()?.remote_hash_mismatch || 0),
+            )}
+          />
+        </SimpleGrid>
+
+        <Box
+          w="$full"
+          borderWidth="1px"
+          borderColor="$neutral6"
+          rounded="$lg"
+          p="$3"
+        >
+          <Heading size="base" mb="$1">
+            {t("webdav_writeback.history.delete_title")}
+          </Heading>
+          <Text size="sm" color="$neutral10" mb="$2">
+            {t("webdav_writeback.history.delete_description")}
+          </Text>
+          <HStack spacing="$2" wrap="wrap">
+            <Button
+              colorScheme="danger"
+              variant="outline"
+              disabled={!selectedHistory().length}
+              onClick={deleteSelectedHistory}
+            >
+              {t("webdav_writeback.history.delete_selected")} (
+              {selectedHistory().length})
+            </Button>
+            <ChoiceSelect
+              value={cleanupClass()}
+              onChange={setCleanupClass}
+              choices={cleanupChoices()}
+            />
+            <Input
+              type="number"
+              min="0"
+              maxW="$32"
+              value={cleanupDays()}
+              onInput={(e) => setCleanupDays(Number(e.currentTarget.value))}
+              aria-label={t("webdav_writeback.history.older_than_days")}
+            />
+            <Button
+              colorScheme="danger"
+              variant="outline"
+              onClick={deleteHistoryClass}
+            >
+              {t("webdav_writeback.history.delete_by_class")}
+            </Button>
+            <Text size="sm">{historyStatus()}</Text>
+          </HStack>
+        </Box>
 
         <Box w="$full" overflowX="auto">
           <Table highlightOnHover dense>
@@ -1388,9 +1406,22 @@ const WebDAVWriteback = () => {
                     />
                   </HeaderFilter>
                 </Th>
+                <Th>{t("webdav_writeback.table.current_generation")}</Th>
+                <Th>
+                  <HeaderFilter
+                    label={t("webdav_writeback.table.current_state")}
+                    active={historyCurrentState() !== "all"}
+                  >
+                    <ChoiceSelect
+                      value={historyCurrentState()}
+                      onChange={setHistoryCurrentState}
+                      choices={historyCurrentStateChoices()}
+                    />
+                  </HeaderFilter>
+                </Th>
                 <Th>{t("webdav_writeback.table.size")}</Th>
-                <Th>{t("webdav_writeback.table.duration")}</Th>
                 <Th>{t("webdav_writeback.table.updated")}</Th>
+                <Th>{t("webdav_writeback.table.completed")}</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -1398,7 +1429,7 @@ const WebDAVWriteback = () => {
                 when={historyRows().length}
                 fallback={
                   <Tr>
-                    <Td colSpan={7}>
+                    <Td colSpan={12}>
                       <Text color="$neutral10">
                         {t("webdav_writeback.history.empty")}
                       </Text>
@@ -1474,14 +1505,6 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.advanced.final_event")}{" "}
                             {time(row.updated_at)}
                             <br />
-                            {t("webdav_writeback.table.current_generation")}{" "}
-                            {row.current_generation || "-"}
-                            {" · "}
-                            {t("webdav_writeback.table.current_state")}{" "}
-                            {row.current_provider_state
-                              ? translateValue("state", row.current_provider_state)
-                              : "-"}
-                            <br />
                             {t(
                               "webdav_writeback.advanced.current_recovery",
                             )}{" "}
@@ -1521,14 +1544,17 @@ const WebDAVWriteback = () => {
                             : t("webdav_writeback.action.none")}
                         </Text>
                       </Td>
-                      <Td>{bytes(row.size)}</Td>
+                      <Td>{row.current_generation || "-"}</Td>
                       <Td>
-                        {duration(
-                          row.started_at,
-                          row.current_completed_at || row.completed_at,
-                        )}
+                        {row.current_provider_state
+                          ? translateValue("state", row.current_provider_state)
+                          : "-"}
                       </Td>
+                      <Td>{bytes(row.size)}</Td>
                       <Td>{time(row.updated_at)}</Td>
+                      <Td>
+                        {time(row.current_completed_at || row.completed_at)}
+                      </Td>
                     </Tr>
                   )}
                 </For>

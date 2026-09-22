@@ -77,7 +77,6 @@
     "recovery_evidence": "Recovery evidence",
     "remote_missing_rehydrate": "Remote missing / rehydrate",
     "delete_title": "Delete History",
-    "maintenance_title": "History maintenance",
     "delete_description": "Deletes only WebDAVWritebackHistory rows. It cannot change current canonical state, delete spool/provider data, trigger re-upload, or affect PROPFIND.",
     "delete_selected": "Delete selected",
     "delete_by_class": "Delete by class",
@@ -89,7 +88,7 @@
     "days": "days",
     "confirm_class": "Delete History class:",
     "confirm_class_safety": "Current canonical/spool/provider state is untouched.",
-    "status_description": "Use the compact status table for daily operations. Generation, provider state, hashes, retries and historical evidence are kept under Advanced."
+    "status_description": "Final Status is the operator-facing answer. Raw historical result, recovery type and old errors are retained under Advanced for audit only."
   },
   "table": {
     "path": "Path",
