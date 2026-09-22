@@ -64,6 +64,8 @@ type Summary = {
   restart_recovery: number
   waiting_provider_verification: number
   needs_cloudsync_rehydrate: number
+  automatic_recovery: number
+  remote_hash_mismatch: number
   errors: number
   states: Record<string, StateSummary>
   updated_at: string
@@ -89,6 +91,7 @@ type ActiveRow = {
   verify_count: number
   active_receivers?: number
   last_error: string
+  resolution_reason?: string
   retry_at?: string
   recovery_state?: string
   remote_verified_at?: string
@@ -129,6 +132,7 @@ type HistoryRow = {
   retry_count: number
   verify_count: number
   last_error: string
+  resolution_reason?: string
   mime_type: string
   created_at: string
   updated_at: string
@@ -342,6 +346,7 @@ const WebDAVWriteback = () => {
       case "reupload_verifying":
         return "info"
       case "automatic_recovery":
+      case "remote_hash_mismatch":
       case "queued":
         return "warning"
       case "waiting_cloudsync_reupload":
@@ -725,6 +730,10 @@ const WebDAVWriteback = () => {
       value: "automatic_recovery",
       label: t("webdav_writeback.status.automatic_recovery"),
     },
+    {
+      value: "remote_hash_mismatch",
+      label: t("webdav_writeback.status.remote_hash_mismatch"),
+    },
     { value: "completed", label: t("webdav_writeback.status.completed") },
     { value: "deleted", label: t("webdav_writeback.status.deleted") },
     {
@@ -896,20 +905,21 @@ const WebDAVWriteback = () => {
             value={stateCount("verifying")}
           />
           <StatCard
-            label={t("webdav_writeback.overview.errors")}
-            value={summary()?.errors || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.restart_recovery")}
-            value={summary()?.restart_recovery || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.missing_spool")}
-            value={summary()?.missing_spool || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.needs_rehydrate")}
+            label={t("webdav_writeback.overview.action_required")}
             value={summary()?.needs_cloudsync_rehydrate || 0}
+            hint={t("webdav_writeback.overview.needs_rehydrate")}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.automatic_recovery")}
+            value={summary()?.automatic_recovery || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.remote_hash_mismatch")}
+            value={summary()?.remote_hash_mismatch || 0}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.normal_completed")}
+            value={stateCount("completed") - (summary()?.remote_hash_mismatch || 0)}
           />
           <StatCard
             label={t("webdav_writeback.overview.completed_cache")}
@@ -1056,6 +1066,11 @@ const WebDAVWriteback = () => {
                             RemoteSHA1 {row.remote_sha1 || "-"}
                             <br />
                             RemoteObjectID {row.remote_object_id || "-"}
+                            <br />
+                            {t("webdav_writeback.advanced.resolution_reason")}{" "}
+                            {row.resolution_reason
+                              ? translateValue("status", row.resolution_reason)
+                              : "-"}
                           </Text>
                         </details>
                       </Td>
@@ -1118,6 +1133,33 @@ const WebDAVWriteback = () => {
         </Text>
 
         <HStack w="$full" spacing="$2" wrap="wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setHistoryFinalStatus("all")
+              setHistoryAction("true")
+            }}
+          >
+            {t("webdav_writeback.common.action_required")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setHistoryAction("all")
+              setHistoryFinalStatus("automatic_recovery")
+            }}
+          >
+            {t("webdav_writeback.status.automatic_recovery")}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setHistoryAction("all")
+              setHistoryFinalStatus("recovered")
+            }}
+          >
+            {t("webdav_writeback.status.recovered")}
+          </Button>
           <Input
             maxW="$80"
             placeholder={t("webdav_writeback.common.filter_path")}
@@ -1266,12 +1308,11 @@ const WebDAVWriteback = () => {
                 <For
                   each={[
                     "path",
-                    "generation",
-                    "size",
                     "final_status",
                     "action",
                     "current_generation",
                     "current_state",
+                    "size",
                     "updated",
                     "completed",
                   ]}
@@ -1313,6 +1354,9 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.common.advanced")}
                           </summary>
                           <Text size="xs" color="$neutral10">
+                            {t("webdav_writeback.advanced.generation")}{" "}
+                            {row.generation}
+                            <br />
                             {t("webdav_writeback.advanced.historical_result")}{" "}
                             {translateValue("result", row.result)}
                             <br />
@@ -1327,6 +1371,11 @@ const WebDAVWriteback = () => {
                               "webdav_writeback.advanced.historical_error",
                             )}{" "}
                             {row.last_error || "-"}
+                            <br />
+                            {t("webdav_writeback.advanced.resolution_reason")}{" "}
+                            {row.resolution_reason
+                              ? translateValue("status", row.resolution_reason)
+                              : "-"}
                             <br />
                             Retry {row.retry_count} · Verify {row.verify_count}{" "}
                             · {t("webdav_writeback.table.duration")}{" "}
@@ -1356,8 +1405,6 @@ const WebDAVWriteback = () => {
                           </Text>
                         </details>
                       </Td>
-                      <Td>{row.generation}</Td>
-                      <Td>{bytes(row.size)}</Td>
                       <Td>
                         <Badge
                           colorScheme={statusColor(row.effective_status) as any}
@@ -1385,6 +1432,7 @@ const WebDAVWriteback = () => {
                           ? translateValue("state", row.current_provider_state)
                           : "-"}
                       </Td>
+                      <Td>{bytes(row.size)}</Td>
                       <Td>{time(row.updated_at)}</Td>
                       <Td>
                         {time(row.current_completed_at || row.completed_at)}

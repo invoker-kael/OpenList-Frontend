@@ -39,7 +39,11 @@
     "errors": "Errors",
     "restart_recovery": "Restart recovery",
     "missing_spool": "Missing spool",
-    "needs_rehydrate": "Needs CloudSync rehydrate",
+    "needs_rehydrate": "Cloud Sync re-upload required",
+    "action_required": "Action required",
+    "automatic_recovery": "Automatic recovery",
+    "remote_hash_mismatch": "Completed with remote hash difference",
+    "normal_completed": "Normal completed",
     "completed_cache": "Completed cache",
     "receiving_reservation": "Receiving reservation",
     "spool_disk_free": "Spool disk free",
@@ -108,7 +112,8 @@
     "historical_result": "Historical result",
     "historical_recovery": "Historical recovery",
     "historical_error": "Historical error",
-    "current_recovery": "Current recovery"
+    "current_recovery": "Current recovery",
+    "resolution_reason": "Resolution reason"
   },
   "state": {
     "active": "Active",
@@ -172,6 +177,7 @@
     "reupload_verifying": "Re-upload verifying provider",
     "recovered": "Recovered",
     "automatic_recovery": "Automatic recovery",
+    "remote_hash_mismatch": "Completed, remote hash differs",
     "completed": "Completed",
     "deleted": "Deleted",
     "remote_missing": "Remote missing",

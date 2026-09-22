@@ -40,6 +40,10 @@
     "restart_recovery": "重启恢复",
     "missing_spool": "本地缓存缺失",
     "needs_rehydrate": "需要 Cloud Sync 重新上传",
+    "action_required": "需要人工操作",
+    "automatic_recovery": "自动恢复中",
+    "remote_hash_mismatch": "已完成，远端 Hash 差异",
+    "normal_completed": "正常完成",
     "completed_cache": "已完成缓存",
     "receiving_reservation": "接收预留空间",
     "spool_disk_free": "缓存磁盘可用空间",
@@ -108,7 +112,8 @@
     "historical_result": "历史结果",
     "historical_recovery": "历史恢复类型",
     "historical_error": "历史错误",
-    "current_recovery": "当前恢复状态"
+    "current_recovery": "当前恢复状态",
+    "resolution_reason": "收敛原因"
   },
   "state": {
     "active": "活动任务",
@@ -172,6 +177,7 @@
     "reupload_verifying": "正在验证重传文件",
     "recovered": "已恢复",
     "automatic_recovery": "自动恢复中",
+    "remote_hash_mismatch": "已完成，远端 Hash 差异",
     "completed": "已完成",
     "deleted": "已删除",
     "remote_missing": "远端缺失",
