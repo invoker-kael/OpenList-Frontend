@@ -756,9 +756,15 @@ const WebDAVWriteback = () => {
 
   const historyCloudSyncStatusChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_final_status") },
-    { value: "receiving", label: t("webdav_writeback.cloudsync_status.receiving") },
+    {
+      value: "receiving",
+      label: t("webdav_writeback.cloudsync_status.receiving"),
+    },
     { value: "syncing", label: t("webdav_writeback.cloudsync_status.syncing") },
-    { value: "completed", label: t("webdav_writeback.cloudsync_status.completed") },
+    {
+      value: "completed",
+      label: t("webdav_writeback.cloudsync_status.completed"),
+    },
     {
       value: "waiting_reupload",
       label: t("webdav_writeback.cloudsync_status.waiting_reupload"),
