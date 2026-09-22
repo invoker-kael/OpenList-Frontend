@@ -212,11 +212,8 @@ const duration = (start?: string, end?: string) => {
   if (ms < 0) return "-"
   const seconds = Math.round(ms / 1000)
   if (seconds < 60) return `${seconds}s`
-  if (seconds < 3600)
-    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-  return `${Math.floor(seconds / 3600)}h ${Math.floor(
-    (seconds % 3600) / 60,
-  )}m`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
 }
 
 const StatCard = (props: {
@@ -224,13 +221,7 @@ const StatCard = (props: {
   value: string | number
   hint?: string
 }) => (
-  <Box
-    w="$full"
-    borderWidth="1px"
-    borderColor="$neutral6"
-    rounded="$lg"
-    p="$3"
-  >
+  <Box w="$full" borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
     <Text size="sm" color="$neutral10">
       {props.label}
     </Text>
@@ -355,10 +346,8 @@ const WebDAVWriteback = () => {
     const params = new URLSearchParams({ limit: historyLimit() })
     if (historySearch().trim()) params.set("q", historySearch().trim())
     if (historyResult() !== "all") params.set("result", historyResult())
-    if (historyRecovery() !== "all")
-      params.set("recovery", historyRecovery())
-    if (historyError() !== "all")
-      params.set("has_error", historyError())
+    if (historyRecovery() !== "all") params.set("recovery", historyRecovery())
+    if (historyError() !== "all") params.set("has_error", historyError())
     if (historyAfter())
       params.set("after", new Date(historyAfter()).toISOString())
     if (historyBefore())
@@ -507,9 +496,7 @@ const WebDAVWriteback = () => {
       return
     }
     const age =
-      days > 0
-        ? ` · ${days} ${t("webdav_writeback.history.days")}`
-        : ""
+      days > 0 ? ` · ${days} ${t("webdav_writeback.history.days")}` : ""
     if (
       !window.confirm(
         `${t("webdav_writeback.history.confirm_class")} ${translateValue(
@@ -668,7 +655,10 @@ const WebDAVWriteback = () => {
     { value: "all", label: t("webdav_writeback.common.all_results") },
     { value: "completed", label: t("webdav_writeback.result.completed") },
     { value: "deleted", label: t("webdav_writeback.result.deleted") },
-    { value: "remote_missing", label: t("webdav_writeback.result.remote_missing") },
+    {
+      value: "remote_missing",
+      label: t("webdav_writeback.result.remote_missing"),
+    },
     {
       value: "recovery_required",
       label: t("webdav_writeback.result.recovery_required"),
@@ -722,7 +712,8 @@ const WebDAVWriteback = () => {
           </Badge>
           <Show when={lastUpdated()}>
             <Text size="xs" color="$neutral10">
-              {t("webdav_writeback.common.updated")} {time(lastUpdated()?.toISOString())}
+              {t("webdav_writeback.common.updated")}{" "}
+              {time(lastUpdated()?.toISOString())}
             </Text>
           </Show>
         </HStack>
@@ -743,12 +734,14 @@ const WebDAVWriteback = () => {
 
       <HStack spacing="$2" wrap="wrap">
         <For
-          each={[
-            ["overview", "webdav_writeback.tabs.overview"],
-            ["active", "webdav_writeback.tabs.active"],
-            ["history", "webdav_writeback.tabs.history"],
-            ["settings", "webdav_writeback.tabs.settings"],
-          ] as const}
+          each={
+            [
+              ["overview", "webdav_writeback.tabs.overview"],
+              ["active", "webdav_writeback.tabs.active"],
+              ["history", "webdav_writeback.tabs.history"],
+              ["settings", "webdav_writeback.tabs.settings"],
+            ] as const
+          }
         >
           {(item) => (
             <Button
@@ -932,10 +925,13 @@ const WebDAVWriteback = () => {
                           {row.path}
                         </Text>
                         <details>
-                          <summary>{t("webdav_writeback.common.advanced")}</summary>
+                          <summary>
+                            {t("webdav_writeback.common.advanced")}
+                          </summary>
                           <Text size="xs" color="$neutral10">
                             {t("webdav_writeback.advanced.generation")}{" "}
-                            {row.generation} · Canonical {row.client_state || "-"}
+                            {row.generation} · Canonical{" "}
+                            {row.client_state || "-"}
                             <br />
                             ETag {row.etag || "-"}
                             <br />
@@ -1151,7 +1147,9 @@ const WebDAVWriteback = () => {
                           {row.path}
                         </Text>
                         <details>
-                          <summary>{t("webdav_writeback.common.advanced")}</summary>
+                          <summary>
+                            {t("webdav_writeback.common.advanced")}
+                          </summary>
                           <Text size="xs" color="$neutral10">
                             Ack {time(row.ack_time)} · Durable{" "}
                             {time(row.durable_at)}
@@ -1225,13 +1223,16 @@ const WebDAVWriteback = () => {
                   gap="$3"
                 >
                   <FormControl>
-                    <FormLabel>{t("webdav_writeback.settings.enabled")}</FormLabel>
+                    <FormLabel>
+                      {t("webdav_writeback.settings.enabled")}
+                    </FormLabel>
                     <HopeSwitch
                       checked={cfg().enabled}
                       onChange={(e: Event) =>
                         setSettings({
                           ...cfg(),
-                          enabled: (e.currentTarget as HTMLInputElement).checked,
+                          enabled: (e.currentTarget as HTMLInputElement)
+                            .checked,
                         })
                       }
                     >
