@@ -642,7 +642,7 @@ const WebDAVWriteback = () => {
           rounded="$lg"
           p="$3"
         >
-          <Heading size="md" mb="$1">
+          <Heading size="base" mb="$1">
             Completed cache maintenance
           </Heading>
           <Text size="sm" color="$neutral10" mb="$2">
@@ -855,7 +855,7 @@ const WebDAVWriteback = () => {
           rounded="$lg"
           p="$3"
         >
-          <Heading size="md" mb="$1">
+          <Heading size="base" mb="$1">
             Delete History
           </Heading>
           <Text size="sm" color="$neutral10" mb="$2">
@@ -991,7 +991,7 @@ const WebDAVWriteback = () => {
                 rounded="$lg"
                 p="$3"
               >
-                <Heading size="md" mb="$1">
+                <Heading size="base" mb="$1">
                   Writeback settings
                 </Heading>
                 <Text size="sm" color="$neutral10" mb="$3">
