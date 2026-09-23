@@ -176,6 +176,13 @@ type HistoryCleanup = {
   deleted: number
 }
 
+type PagedResponse<T> = {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+}
+
 type Choice = {
   value: string
   label: string
@@ -219,6 +226,8 @@ const AUTO_REFRESH_CHOICES = [
   "45",
   "60",
 ]
+
+const PAGE_SIZE_CHOICES = ["25", "50", "100", "200"]
 
 const unwrap = async <T,>(request: Promise<Resp<T>>): Promise<T> => {
   const resp = await request
@@ -444,6 +453,21 @@ const saveColumnWidths = (storageKey: string, widths: ColumnWidths) => {
   window.localStorage.setItem(storageKey, JSON.stringify(widths))
 }
 
+const loadLocalChoice = (
+  storageKey: string,
+  fallback: string,
+  choices: string[],
+) => {
+  if (typeof window === "undefined") return fallback
+  const value = window.localStorage.getItem(storageKey)
+  return value && choices.includes(value) ? value : fallback
+}
+
+const saveLocalChoice = (storageKey: string, value: string) => {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(storageKey, value)
+}
+
 const totalColumnWidth = (widths: ColumnWidths) =>
   Object.values(widths).reduce((sum, width) => sum + width, 0)
 
@@ -513,6 +537,95 @@ const ResizableTh = (props: {
   </Th>
 )
 
+const PaginationControls = (props: {
+  page: number
+  pageSize: string
+  total: number
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: string) => void
+  totalLabel: string
+  pageLabel: string
+  pageSizeLabel: string
+  firstLabel: string
+  previousLabel: string
+  nextLabel: string
+  lastLabel: string
+}) => {
+  const pageSizeNumber = () => Math.max(1, Number(props.pageSize) || 50)
+  const pageCount = () =>
+    Math.max(1, Math.ceil(props.total / pageSizeNumber()))
+  const setSafePage = (page: number) =>
+    props.onPageChange(Math.max(1, Math.min(pageCount(), page)))
+
+  return (
+    <HStack
+      w="$full"
+      spacing="$2"
+      wrap="wrap"
+      justifyContent="space-between"
+      alignItems="center"
+    >
+      <HStack spacing="$2" wrap="wrap">
+        <Text size="sm">
+          {props.totalLabel}: {props.total}
+        </Text>
+        <Text size="sm">{props.pageSizeLabel}</Text>
+        <ChoiceSelect
+          value={props.pageSize}
+          onChange={props.onPageSizeChange}
+          minW="$24"
+          choices={PAGE_SIZE_CHOICES.map((value) => ({
+            value,
+            label: value,
+          }))}
+        />
+      </HStack>
+      <HStack spacing="$2" wrap="wrap">
+        <Button
+          variant="outline"
+          disabled={props.page <= 1}
+          onClick={() => setSafePage(1)}
+        >
+          {props.firstLabel}
+        </Button>
+        <Button
+          variant="outline"
+          disabled={props.page <= 1}
+          onClick={() => setSafePage(props.page - 1)}
+        >
+          {props.previousLabel}
+        </Button>
+        <Text size="sm">{props.pageLabel}</Text>
+        <Input
+          type="number"
+          min="1"
+          max={pageCount()}
+          value={props.page}
+          maxW="$20"
+          onChange={(event) =>
+            setSafePage(Number(event.currentTarget.value) || 1)
+          }
+        />
+        <Text size="sm">/ {pageCount()}</Text>
+        <Button
+          variant="outline"
+          disabled={props.page >= pageCount()}
+          onClick={() => setSafePage(props.page + 1)}
+        >
+          {props.nextLabel}
+        </Button>
+        <Button
+          variant="outline"
+          disabled={props.page >= pageCount()}
+          onClick={() => setSafePage(pageCount())}
+        >
+          {props.lastLabel}
+        </Button>
+      </HStack>
+    </HStack>
+  )
+}
+
 const WebDAVWriteback = () => {
   const t = useT()
   useManageTitle("webdav_writeback.title")
@@ -533,6 +646,13 @@ const WebDAVWriteback = () => {
 
   const [activeState, setActiveState] = createSignal("active")
   const [activeSearch, setActiveSearch] = createSignal("")
+  const activePageSizeStorageKey = "webdav-writeback-active-page-size-v1"
+  const historyPageSizeStorageKey = "webdav-writeback-history-page-size-v1"
+  const [activePage, setActivePage] = createSignal(1)
+  const [activePageSize, setActivePageSize] = createSignal(
+    loadLocalChoice(activePageSizeStorageKey, "50", PAGE_SIZE_CHOICES),
+  )
+  const [activeTotal, setActiveTotal] = createSignal(0)
   const [activeSortKey, setActiveSortKey] =
     createSignal<ActiveSortKey>("updated")
   const [activeSortDirection, setActiveSortDirection] =
@@ -553,7 +673,11 @@ const WebDAVWriteback = () => {
   const [historyError, setHistoryError] = createSignal("all")
   const [historyAfter, setHistoryAfter] = createSignal("")
   const [historyBefore, setHistoryBefore] = createSignal("")
-  const [historyLimit, setHistoryLimit] = createSignal("200")
+  const [historyPage, setHistoryPage] = createSignal(1)
+  const [historyLimit, setHistoryLimit] = createSignal(
+    loadLocalChoice(historyPageSizeStorageKey, "50", PAGE_SIZE_CHOICES),
+  )
+  const [historyTotal, setHistoryTotal] = createSignal(0)
   const [selectedHistory, setSelectedHistory] = createSignal<number[]>([])
   const [cleanupClass, setCleanupClass] = createSignal("successful")
   const [cleanupDays, setCleanupDays] = createSignal(30)
@@ -706,14 +830,30 @@ const WebDAVWriteback = () => {
   const loadActive = async () => {
     const params = new URLSearchParams({
       state: activeState(),
-      limit: "200",
+      page: String(activePage()),
+      limit: activePageSize(),
     })
     if (activeSearch().trim()) params.set("q", activeSearch().trim())
-    setActiveRows(await get<ActiveRow[]>(`/list?${params.toString()}`))
+    const result = await get<PagedResponse<ActiveRow>>(
+      `/list?${params.toString()}`,
+    )
+    setActiveTotal(result.total)
+    const pageCount = Math.max(
+      1,
+      Math.ceil(result.total / Math.max(1, result.page_size)),
+    )
+    if (activePage() > pageCount) {
+      setActivePage(pageCount)
+      return
+    }
+    setActiveRows(result.items || [])
   }
 
   const loadHistory = async () => {
-    const params = new URLSearchParams({ limit: historyLimit() })
+    const params = new URLSearchParams({
+      page: String(historyPage()),
+      limit: historyLimit(),
+    })
     if (historySearch().trim()) params.set("q", historySearch().trim())
     if (historyGroup() !== "all") params.set("status_group", historyGroup())
     if (historyFinalStatus() !== "all")
@@ -732,11 +872,21 @@ const WebDAVWriteback = () => {
     if (historyBefore())
       params.set("before", new Date(historyBefore()).toISOString())
 
-    const [rows, currentSummary] = await Promise.all([
-      get<HistoryRow[]>(`/history?${params.toString()}`),
+    const [result, currentSummary] = await Promise.all([
+      get<PagedResponse<HistoryRow>>(`/history?${params.toString()}`),
       get<Summary>("/summary"),
     ])
-    setHistoryRows(rows)
+    setHistoryTotal(result.total)
+    const pageCount = Math.max(
+      1,
+      Math.ceil(result.total / Math.max(1, result.page_size)),
+    )
+    if (historyPage() > pageCount) {
+      setHistoryPage(pageCount)
+      setSummary(currentSummary)
+      return
+    }
+    setHistoryRows(result.items || [])
     setSummary(currentSummary)
   }
 
@@ -767,11 +917,50 @@ const WebDAVWriteback = () => {
     }
   }
 
+  let activeFilterSignature = ""
+  createEffect(() => {
+    const signature = JSON.stringify([
+      activeState(),
+      activeSearch(),
+      activePageSize(),
+    ])
+    if (activeFilterSignature && signature !== activeFilterSignature) {
+      setActivePage(1)
+    }
+    activeFilterSignature = signature
+    saveLocalChoice(activePageSizeStorageKey, activePageSize())
+  })
+
+  let historyFilterSignature = ""
+  createEffect(() => {
+    const signature = JSON.stringify([
+      historySearch(),
+      historyGroup(),
+      historyFinalStatus(),
+      historyAction(),
+      historyCurrentState(),
+      historyGeneration(),
+      historyResult(),
+      historyRecovery(),
+      historyError(),
+      historyAfter(),
+      historyBefore(),
+      historyLimit(),
+    ])
+    if (historyFilterSignature && signature !== historyFilterSignature) {
+      setHistoryPage(1)
+    }
+    historyFilterSignature = signature
+    saveLocalChoice(historyPageSizeStorageKey, historyLimit())
+  })
+
   createEffect(() => {
     const currentTab = tab()
     if (currentTab === "active") {
       activeState()
       activeSearch()
+      activePage()
+      activePageSize()
     } else if (currentTab === "history") {
       historySearch()
       historyGroup()
@@ -785,6 +974,7 @@ const WebDAVWriteback = () => {
       historyAfter()
       historyBefore()
       historyLimit()
+      historyPage()
     }
 
     const timer = window.setTimeout(() => {
@@ -1230,7 +1420,7 @@ const WebDAVWriteback = () => {
     setHistoryError("all")
     setHistoryAfter("")
     setHistoryBefore("")
-    setHistoryLimit("200")
+    setHistoryPage(1)
   }
 
   const historyResultChoices = (): Choice[] => [
@@ -1858,6 +2048,20 @@ const WebDAVWriteback = () => {
             </Tbody>
           </Table>
         </Box>
+        <PaginationControls
+          page={activePage()}
+          pageSize={activePageSize()}
+          total={activeTotal()}
+          onPageChange={setActivePage}
+          onPageSizeChange={setActivePageSize}
+          totalLabel={t("webdav_writeback.common.total_rows")}
+          pageLabel={t("webdav_writeback.common.page")}
+          pageSizeLabel={t("webdav_writeback.common.page_size")}
+          firstLabel={t("webdav_writeback.common.first_page")}
+          previousLabel={t("webdav_writeback.common.previous_page")}
+          nextLabel={t("webdav_writeback.common.next_page")}
+          lastLabel={t("webdav_writeback.common.last_page")}
+        />
       </Show>
 
       <Show when={tab() === "history"}>
@@ -1910,15 +2114,6 @@ const WebDAVWriteback = () => {
                 value={historyBefore()}
                 onInput={(e) => setHistoryBefore(e.currentTarget.value)}
                 aria-label={t("webdav_writeback.common.before")}
-              />
-              <ChoiceSelect
-                value={historyLimit()}
-                onChange={setHistoryLimit}
-                minW="$24"
-                choices={["100", "200", "500"].map((value) => ({
-                  value,
-                  label: value,
-                }))}
               />
               <Button variant="outline" onClick={resetHistoryFilters}>
                 {t("webdav_writeback.common.reset_filters")}
@@ -2308,6 +2503,20 @@ const WebDAVWriteback = () => {
             </Tbody>
           </Table>
         </Box>
+        <PaginationControls
+          page={historyPage()}
+          pageSize={historyLimit()}
+          total={historyTotal()}
+          onPageChange={setHistoryPage}
+          onPageSizeChange={setHistoryLimit}
+          totalLabel={t("webdav_writeback.common.total_rows")}
+          pageLabel={t("webdav_writeback.common.page")}
+          pageSizeLabel={t("webdav_writeback.common.page_size")}
+          firstLabel={t("webdav_writeback.common.first_page")}
+          previousLabel={t("webdav_writeback.common.previous_page")}
+          nextLabel={t("webdav_writeback.common.next_page")}
+          lastLabel={t("webdav_writeback.common.last_page")}
+        />
       </Show>
 
       <Show when={tab() === "settings"}>
