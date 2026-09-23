@@ -560,9 +560,10 @@ const WebDAVWriteback = () => {
 
   const activeColumnStorageKey = "webdav-writeback-active-column-widths-v1"
   const historyColumnStorageKey = "webdav-writeback-history-column-widths-v1"
-  const [activeColumnWidths, setActiveColumnWidths] = createSignal<ColumnWidths>(
-    loadColumnWidths(activeColumnStorageKey, ACTIVE_COLUMN_WIDTHS),
-  )
+  const [activeColumnWidths, setActiveColumnWidths] =
+    createSignal<ColumnWidths>(
+      loadColumnWidths(activeColumnStorageKey, ACTIVE_COLUMN_WIDTHS),
+    )
   const [historyColumnWidths, setHistoryColumnWidths] =
     createSignal<ColumnWidths>(
       loadColumnWidths(historyColumnStorageKey, HISTORY_COLUMN_WIDTHS),
@@ -2050,7 +2051,9 @@ const WebDAVWriteback = () => {
                 </ResizableTh>
                 <ResizableTh
                   width={historyColumnWidths().current_generation}
-                  onResize={(width) => setHistoryColumnWidth("current_generation", width)}
+                  onResize={(width) =>
+                    setHistoryColumnWidth("current_generation", width)
+                  }
                 >
                   <SortableHeader
                     label={t("webdav_writeback.table.current_generation")}
@@ -2068,7 +2071,9 @@ const WebDAVWriteback = () => {
                 </ResizableTh>
                 <ResizableTh
                   width={historyColumnWidths().current_state}
-                  onResize={(width) => setHistoryColumnWidth("current_state", width)}
+                  onResize={(width) =>
+                    setHistoryColumnWidth("current_state", width)
+                  }
                 >
                   <HeaderFilter
                     label={t("webdav_writeback.table.current_state")}
@@ -2125,7 +2130,9 @@ const WebDAVWriteback = () => {
                 </ResizableTh>
                 <ResizableTh
                   width={historyColumnWidths().completed}
-                  onResize={(width) => setHistoryColumnWidth("completed", width)}
+                  onResize={(width) =>
+                    setHistoryColumnWidth("completed", width)
+                  }
                 >
                   <SortableHeader
                     label={t("webdav_writeback.table.completed")}
