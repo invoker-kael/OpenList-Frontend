@@ -176,6 +176,10 @@ type HistoryCleanup = {
   deleted: number
 }
 
+type VerifyNowResult = {
+  scheduled: number
+}
+
 type PagedResponse<T> = {
   items: T[]
   total: number
@@ -846,6 +850,20 @@ const WebDAVWriteback = () => {
       return
     }
     setActiveRows(result.items || [])
+  }
+
+  const verifyNow = (row: ActiveRow) => {
+    if (row.provider_state !== "verifying") return
+    void run(async () => {
+      const result = await post<VerifyNowResult>("/verify-now", {
+        ids: [Number(row.id)],
+      })
+      notify.success(
+        `${t("webdav_writeback.active.verify_now_scheduled")} ${result.scheduled}`,
+      )
+      await Promise.all([loadOverview(), loadActive()])
+      setLastUpdated(new Date())
+    })
   }
 
   const loadHistory = async () => {
@@ -2017,6 +2035,16 @@ const WebDAVWriteback = () => {
                             ? translateValue("action", row.operator_action)
                             : t("webdav_writeback.action.none")}
                         </Text>
+                        <Show when={row.provider_state === "verifying"}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            mt="$1"
+                            onClick={() => verifyNow(row)}
+                          >
+                            {t("webdav_writeback.active.verify_now")}
+                          </Button>
+                        </Show>
                       </Td>
                       <Td>
                         <Badge

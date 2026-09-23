@@ -80,7 +80,9 @@
   },
   "active": {
     "description": "仅显示实时任务、重试、恢复和错误。已完成 generation 保留在历史记录中，不生成虚假的上传百分比。",
-    "empty": "当前没有活动的写回任务。"
+    "empty": "当前没有活动的写回任务。",
+    "verify_now": "立即重新验证",
+    "verify_now_scheduled": "已安排重新验证："
   },
   "history": {
     "rows": "历史记录数",
