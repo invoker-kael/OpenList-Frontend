@@ -552,8 +552,7 @@ const PaginationControls = (props: {
   lastLabel: string
 }) => {
   const pageSizeNumber = () => Math.max(1, Number(props.pageSize) || 50)
-  const pageCount = () =>
-    Math.max(1, Math.ceil(props.total / pageSizeNumber()))
+  const pageCount = () => Math.max(1, Math.ceil(props.total / pageSizeNumber()))
   const setSafePage = (page: number) =>
     props.onPageChange(Math.max(1, Math.min(pageCount(), page)))
 
