@@ -28,6 +28,7 @@
     "no_action_required": "No action required",
     "generation": "Generation",
     "reset_filters": "Reset filters",
+    "reset_column_widths": "Reset column widths",
     "auto_refresh_off": "Auto refresh off",
     "all": "All",
     "processing": "Processing",

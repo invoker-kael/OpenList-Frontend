@@ -386,6 +386,133 @@ const ChoiceSelect = (props: {
   </Select>
 )
 
+type ColumnWidths = Record<string, number>
+
+const COLUMN_WIDTH_MIN = 56
+const ACTIVE_COLUMN_WIDTHS: ColumnWidths = {
+  path: 420,
+  size: 100,
+  progress: 150,
+  status: 140,
+  action: 160,
+  state: 130,
+  recovery: 150,
+  retry: 80,
+  verify: 80,
+  started: 180,
+  updated: 180,
+  retry_at: 180,
+  error: 360,
+}
+const HISTORY_COLUMN_WIDTHS: ColumnWidths = {
+  select: 56,
+  path: 420,
+  status: 150,
+  action: 170,
+  current_generation: 130,
+  current_state: 150,
+  size: 100,
+  updated: 180,
+  completed: 180,
+}
+
+const loadColumnWidths = (
+  storageKey: string,
+  defaults: ColumnWidths,
+): ColumnWidths => {
+  if (typeof window === "undefined") return { ...defaults }
+  try {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return { ...defaults }
+    const stored = JSON.parse(raw) as Record<string, unknown>
+    return Object.fromEntries(
+      Object.entries(defaults).map(([key, fallback]) => {
+        const value = Number(stored[key])
+        return [
+          key,
+          Number.isFinite(value) ? Math.max(COLUMN_WIDTH_MIN, value) : fallback,
+        ]
+      }),
+    )
+  } catch {
+    return { ...defaults }
+  }
+}
+
+const saveColumnWidths = (storageKey: string, widths: ColumnWidths) => {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(storageKey, JSON.stringify(widths))
+}
+
+const totalColumnWidth = (widths: ColumnWidths) =>
+  Object.values(widths).reduce((sum, width) => sum + width, 0)
+
+const beginColumnResize = (
+  event: MouseEvent,
+  width: number,
+  onResize: (width: number) => void,
+) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  const startX = event.clientX
+  const startWidth = width
+  const previousCursor = document.body.style.cursor
+  const previousUserSelect = document.body.style.userSelect
+  document.body.style.cursor = "col-resize"
+  document.body.style.userSelect = "none"
+
+  const onMove = (moveEvent: MouseEvent) => {
+    onResize(
+      Math.max(
+        COLUMN_WIDTH_MIN,
+        Math.round(startWidth + moveEvent.clientX - startX),
+      ),
+    )
+  }
+  const onUp = () => {
+    window.removeEventListener("mousemove", onMove)
+    document.body.style.cursor = previousCursor
+    document.body.style.userSelect = previousUserSelect
+  }
+
+  window.addEventListener("mousemove", onMove)
+  window.addEventListener("mouseup", onUp, { once: true })
+}
+
+const ResizableTh = (props: {
+  width: number
+  onResize: (width: number) => void
+  children?: any
+}) => (
+  <Th
+    style={{
+      position: "relative",
+      width: `${props.width}px`,
+      "min-width": `${props.width}px`,
+      "max-width": `${props.width}px`,
+    }}
+  >
+    {props.children}
+    <div
+      aria-hidden="true"
+      onMouseDown={(event) =>
+        beginColumnResize(event, props.width, props.onResize)
+      }
+      style={{
+        position: "absolute",
+        top: "0",
+        right: "-4px",
+        width: "8px",
+        height: "100%",
+        cursor: "col-resize",
+        "z-index": "2",
+        "border-right": "1px solid var(--hope-colors-neutral6)",
+      }}
+    />
+  </Th>
+)
+
 const WebDAVWriteback = () => {
   const t = useT()
   useManageTitle("webdav_writeback.title")
@@ -430,6 +557,61 @@ const WebDAVWriteback = () => {
   const [selectedHistory, setSelectedHistory] = createSignal<number[]>([])
   const [cleanupClass, setCleanupClass] = createSignal("successful")
   const [cleanupDays, setCleanupDays] = createSignal(30)
+
+  const activeColumnStorageKey = "webdav-writeback-active-column-widths-v1"
+  const historyColumnStorageKey = "webdav-writeback-history-column-widths-v1"
+  const [activeColumnWidths, setActiveColumnWidths] = createSignal<ColumnWidths>(
+    loadColumnWidths(activeColumnStorageKey, ACTIVE_COLUMN_WIDTHS),
+  )
+  const [historyColumnWidths, setHistoryColumnWidths] =
+    createSignal<ColumnWidths>(
+      loadColumnWidths(historyColumnStorageKey, HISTORY_COLUMN_WIDTHS),
+    )
+
+  const setColumnWidth = (
+    storageKey: string,
+    setter: (value: ColumnWidths) => void,
+    current: () => ColumnWidths,
+    key: string,
+    width: number,
+  ) => {
+    const next = { ...current(), [key]: Math.max(COLUMN_WIDTH_MIN, width) }
+    setter(next)
+    saveColumnWidths(storageKey, next)
+  }
+
+  const setActiveColumnWidth = (key: string, width: number) =>
+    setColumnWidth(
+      activeColumnStorageKey,
+      setActiveColumnWidths,
+      activeColumnWidths,
+      key,
+      width,
+    )
+  const setHistoryColumnWidth = (key: string, width: number) =>
+    setColumnWidth(
+      historyColumnStorageKey,
+      setHistoryColumnWidths,
+      historyColumnWidths,
+      key,
+      width,
+    )
+  const resetActiveColumnWidths = () => {
+    const next = { ...ACTIVE_COLUMN_WIDTHS }
+    setActiveColumnWidths(next)
+    saveColumnWidths(activeColumnStorageKey, next)
+  }
+  const resetHistoryColumnWidths = () => {
+    const next = { ...HISTORY_COLUMN_WIDTHS }
+    setHistoryColumnWidths(next)
+    saveColumnWidths(historyColumnStorageKey, next)
+  }
+  const activeTableWidth = createMemo(() =>
+    totalColumnWidth(activeColumnWidths()),
+  )
+  const historyTableWidth = createMemo(() =>
+    totalColumnWidth(historyColumnWidths()),
+  )
 
   const translateValue = (
     group: "state" | "result" | "recovery" | "cleanup" | "status" | "action",
@@ -1297,13 +1479,27 @@ const WebDAVWriteback = () => {
             value={activeSearch()}
             onInput={(e) => setActiveSearch(e.currentTarget.value)}
           />
+          <Button variant="outline" onClick={resetActiveColumnWidths}>
+            {t("webdav_writeback.common.reset_column_widths")}
+          </Button>
         </HStack>
 
         <Box w="$full" overflowX="auto">
-          <Table highlightOnHover dense>
+          <Table
+            highlightOnHover
+            dense
+            style={{
+              "table-layout": "fixed",
+              width: `${activeTableWidth()}px`,
+              "min-width": `${activeTableWidth()}px`,
+            }}
+          >
             <Thead>
               <Tr>
-                <Th>
+                <ResizableTh
+                  width={activeColumnWidths().path}
+                  onResize={(width) => setActiveColumnWidth("path", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.path")}
                     sortDirection={
@@ -1315,8 +1511,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().size}
+                  onResize={(width) => setActiveColumnWidth("size", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.size")}
                     sortDirection={
@@ -1328,8 +1527,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().progress}
+                  onResize={(width) => setActiveColumnWidth("progress", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.progress")}
                     sortDirection={
@@ -1341,8 +1543,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().status}
+                  onResize={(width) => setActiveColumnWidth("status", width)}
+                >
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
                     active={activeState() !== "active"}
@@ -1361,8 +1566,11 @@ const WebDAVWriteback = () => {
                       choices={activeChoices()}
                     />
                   </HeaderFilter>
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().action}
+                  onResize={(width) => setActiveColumnWidth("action", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.action")}
                     sortDirection={
@@ -1374,8 +1582,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().state}
+                  onResize={(width) => setActiveColumnWidth("state", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.state")}
                     sortDirection={
@@ -1387,8 +1598,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().recovery}
+                  onResize={(width) => setActiveColumnWidth("recovery", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.recovery")}
                     sortDirection={
@@ -1400,8 +1614,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().retry}
+                  onResize={(width) => setActiveColumnWidth("retry", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.retry")}
                     sortDirection={
@@ -1413,8 +1630,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().verify}
+                  onResize={(width) => setActiveColumnWidth("verify", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.verify")}
                     sortDirection={
@@ -1426,8 +1646,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().started}
+                  onResize={(width) => setActiveColumnWidth("started", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.started")}
                     sortDirection={
@@ -1439,8 +1662,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().updated}
+                  onResize={(width) => setActiveColumnWidth("updated", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.updated")}
                     sortDirection={
@@ -1452,8 +1678,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().retry_at}
+                  onResize={(width) => setActiveColumnWidth("retry_at", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.retry_at")}
                     sortDirection={
@@ -1465,8 +1694,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={activeColumnWidths().error}
+                  onResize={(width) => setActiveColumnWidth("error", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.error")}
                     sortDirection={
@@ -1478,7 +1710,7 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
+                </ResizableTh>
               </Tr>
             </Thead>
             <Tbody>
@@ -1498,7 +1730,14 @@ const WebDAVWriteback = () => {
                   {(row) => (
                     <Tr>
                       <Td>
-                        <Text maxW="$96" css={{ wordBreak: "break-all" }}>
+                        <Text
+                          title={row.path}
+                          css={{
+                            "white-space": "nowrap",
+                            overflow: "hidden",
+                            "text-overflow": "ellipsis",
+                          }}
+                        >
                           {row.path}
                         </Text>
                         <details>
@@ -1628,6 +1867,9 @@ const WebDAVWriteback = () => {
             value={historySearch()}
             onInput={(e) => setHistorySearch(e.currentTarget.value)}
           />
+          <Button variant="outline" onClick={resetHistoryColumnWidths}>
+            {t("webdav_writeback.common.reset_column_widths")}
+          </Button>
           <details>
             <summary style={{ cursor: "pointer", "white-space": "nowrap" }}>
               {t("webdav_writeback.common.advanced_filters")} ▾
@@ -1729,11 +1971,25 @@ const WebDAVWriteback = () => {
         </Box>
 
         <Box w="$full" overflowX="auto">
-          <Table highlightOnHover dense>
+          <Table
+            highlightOnHover
+            dense
+            style={{
+              "table-layout": "fixed",
+              width: `${historyTableWidth()}px`,
+              "min-width": `${historyTableWidth()}px`,
+            }}
+          >
             <Thead>
               <Tr>
-                <Th />
-                <Th>
+                <ResizableTh
+                  width={historyColumnWidths().select}
+                  onResize={(width) => setHistoryColumnWidth("select", width)}
+                />
+                <ResizableTh
+                  width={historyColumnWidths().path}
+                  onResize={(width) => setHistoryColumnWidth("path", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.path")}
                     sortDirection={
@@ -1745,8 +2001,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().status}
+                  onResize={(width) => setHistoryColumnWidth("status", width)}
+                >
                   <HeaderFilter
                     label={t("webdav_writeback.table.final_status")}
                     active={historyCloudSyncStatus() !== "all"}
@@ -1765,8 +2024,11 @@ const WebDAVWriteback = () => {
                       choices={historyCloudSyncStatusChoices()}
                     />
                   </HeaderFilter>
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().action}
+                  onResize={(width) => setHistoryColumnWidth("action", width)}
+                >
                   <HeaderFilter
                     label={t("webdav_writeback.table.action")}
                     active={historyAction() !== "all"}
@@ -1785,8 +2047,11 @@ const WebDAVWriteback = () => {
                       choices={historyActionChoices()}
                     />
                   </HeaderFilter>
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().current_generation}
+                  onResize={(width) => setHistoryColumnWidth("current_generation", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.current_generation")}
                     sortDirection={
@@ -1800,8 +2065,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().current_state}
+                  onResize={(width) => setHistoryColumnWidth("current_state", width)}
+                >
                   <HeaderFilter
                     label={t("webdav_writeback.table.current_state")}
                     active={historyCurrentState() !== "all"}
@@ -1822,8 +2090,11 @@ const WebDAVWriteback = () => {
                       choices={historyCurrentStateChoices()}
                     />
                   </HeaderFilter>
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().size}
+                  onResize={(width) => setHistoryColumnWidth("size", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.size")}
                     sortDirection={
@@ -1835,8 +2106,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().updated}
+                  onResize={(width) => setHistoryColumnWidth("updated", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.updated")}
                     sortDirection={
@@ -1848,8 +2122,11 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
-                <Th>
+                </ResizableTh>
+                <ResizableTh
+                  width={historyColumnWidths().completed}
+                  onResize={(width) => setHistoryColumnWidth("completed", width)}
+                >
                   <SortableHeader
                     label={t("webdav_writeback.table.completed")}
                     sortDirection={
@@ -1863,7 +2140,7 @@ const WebDAVWriteback = () => {
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
-                </Th>
+                </ResizableTh>
               </Tr>
             </Thead>
             <Tbody>
@@ -1891,7 +2168,14 @@ const WebDAVWriteback = () => {
                         />
                       </Td>
                       <Td>
-                        <Text maxW="$96" css={{ wordBreak: "break-all" }}>
+                        <Text
+                          title={row.path}
+                          css={{
+                            "white-space": "nowrap",
+                            overflow: "hidden",
+                            "text-overflow": "ellipsis",
+                          }}
+                        >
                           {row.path}
                         </Text>
                         <details>

@@ -28,6 +28,7 @@
     "no_action_required": "无需人工操作",
     "generation": "代次",
     "reset_filters": "重置筛选",
+    "reset_column_widths": "重置列宽",
     "auto_refresh_off": "自动刷新已关闭",
     "all": "全部",
     "processing": "处理中",
