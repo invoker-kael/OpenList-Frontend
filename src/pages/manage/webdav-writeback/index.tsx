@@ -911,7 +911,9 @@ const WebDAVWriteback = () => {
   }
 
   const reuploadSelected = () => {
-    const ids = selectedActive().map((id) => Number(id)).filter(Number.isFinite)
+    const ids = selectedActive()
+      .map((id) => Number(id))
+      .filter(Number.isFinite)
     if (!ids.length) return
     if (
       !window.confirm(
