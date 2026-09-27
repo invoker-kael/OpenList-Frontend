@@ -65,7 +65,8 @@
     "used": "已用",
     "total": "总计",
     "max_pending_spool": "最大待处理缓存",
-    "reserve_free_space": "磁盘保留空间"
+    "reserve_free_space": "磁盘保留空间",
+    "paused": "已暂停"
   },
   "cache": {
     "title": "已完成缓存维护",
@@ -83,8 +84,18 @@
     "empty": "当前没有活动的写回任务。",
     "reupload_now": "立即重传",
     "reupload_now_scheduled": "已安排立即重传：",
-    "batch_reupload": "批量重新重传",
-    "confirm_batch_reupload": "确认立即重传选中的任务，数量："
+    "batch_reupload": "重传选中",
+    "confirm_batch_reupload": "确认立即重传选中的任务，数量：",
+    "start": "开始",
+    "pause": "暂停",
+    "start_all": "全部开始",
+    "pause_all": "全部暂停",
+    "reupload_all": "全部重传",
+    "start_selected": "开始选中",
+    "pause_selected": "暂停选中",
+    "batch_action_done": "批量操作已处理：",
+    "confirm_pause_all": "确认暂停全部可暂停的活动任务？正在上传的任务会尽快中断并保留本地持久缓存。",
+    "confirm_reupload_all": "确认立即重传全部可重传任务？该操作会绕过远端验证并直接使用本地持久缓存重新上传。"
   },
   "history": {
     "rows": "历史记录数",
@@ -147,7 +158,8 @@
     "completed": "已完成",
     "deleted": "已删除",
     "error": "错误",
-    "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传"
+    "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",
+    "paused": "已暂停"
   },
   "result": {
     "completed": "已完成",
@@ -198,7 +210,8 @@
     "syncing": "后台同步中",
     "completed": "已完成",
     "waiting_reupload": "等待 Cloud Sync 重传",
-    "deleted": "已删除"
+    "deleted": "已删除",
+    "paused": "已暂停"
   },
   "status": {
     "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",
@@ -215,10 +228,12 @@
     "queued": "已排队",
     "uploading": "上传中",
     "verifying": "验证中",
-    "receiving": "接收中"
+    "receiving": "接收中",
+    "paused": "已暂停"
   },
   "action": {
     "restart_cloudsync": "停用后重新启用 Cloud Sync 任务",
-    "none": "无需操作"
+    "none": "无需操作",
+    "paused_by_operator": "已由操作员暂停"
   }
 }

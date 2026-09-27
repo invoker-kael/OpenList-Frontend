@@ -67,6 +67,7 @@ type Summary = {
   needs_cloudsync_rehydrate: number
   automatic_recovery: number
   remote_hash_mismatch: number
+  paused: number
   errors: number
   states: Record<string, StateSummary>
   updated_at: string
@@ -178,6 +179,11 @@ type HistoryCleanup = {
 
 type ReuploadNowResult = {
   scheduled: number
+}
+
+type BatchActionResult = {
+  affected: number
+  action: string
 }
 
 type PagedResponse<T> = {
@@ -762,6 +768,8 @@ const WebDAVWriteback = () => {
         return "danger"
       case "queued":
         return "warning"
+      case "paused":
+        return "neutral"
       default:
         return "neutral"
     }
@@ -769,6 +777,7 @@ const WebDAVWriteback = () => {
 
   const cloudSyncStatus = (status?: string, action?: string) => {
     if (action === "restart_cloudsync_required") return "waiting_reupload"
+    if (status === "paused" || action === "paused_by_operator") return "paused"
     switch (status) {
       case "receiving":
       case "reupload_receiving":
@@ -792,6 +801,8 @@ const WebDAVWriteback = () => {
       case "receiving":
       case "syncing":
         return "info"
+      case "paused":
+        return "neutral"
       default:
         return "neutral"
     }
@@ -832,6 +843,10 @@ const WebDAVWriteback = () => {
     setSummary(await get<Summary>("/summary"))
   }
 
+  const actionable = (row: ActiveRow) =>
+    !row.id.startsWith("receive:") &&
+    ["queued", "uploading", "verifying"].includes(row.provider_state)
+
   const reuploadEligible = (row: ActiveRow) =>
     !row.is_dir &&
     (row.provider_state === "verifying" || row.provider_state === "queued")
@@ -857,11 +872,11 @@ const WebDAVWriteback = () => {
     }
     const rows = result.items || []
     setActiveRows(rows)
-    const visibleEligible = new Set(
-      rows.filter(reuploadEligible).map((row) => row.id),
+    const visibleActionable = new Set(
+      rows.filter(actionable).map((row) => row.id),
     )
     setSelectedActive((current) =>
-      current.filter((id) => visibleEligible.has(id)),
+      current.filter((id) => visibleActionable.has(id)),
     )
   }
 
@@ -875,9 +890,36 @@ const WebDAVWriteback = () => {
     setLastUpdated(new Date())
   }
 
+  const batchAction = async (
+    action: "pause" | "resume" | "reupload",
+    ids: number[] = [],
+    all = false,
+  ) => {
+    const result = await post<BatchActionResult>("/batch-action", {
+      action,
+      ids,
+      all,
+    })
+    notify.success(
+      `${t("webdav_writeback.active.batch_action_done")} ${result.affected}`,
+    )
+    await Promise.all([loadOverview(), loadActive()])
+    setLastUpdated(new Date())
+  }
+
   const reuploadRow = (row: ActiveRow) => {
     if (!reuploadEligible(row)) return
     void run(() => reuploadNow([Number(row.id)]))
+  }
+
+  const pauseRow = (row: ActiveRow) => {
+    if (!actionable(row) || row.paused) return
+    void run(() => batchAction("pause", [Number(row.id)]))
+  }
+
+  const resumeRow = (row: ActiveRow) => {
+    if (!actionable(row) || !row.paused) return
+    void run(() => batchAction("resume", [Number(row.id)]))
   }
 
   const toggleActive = (id: string, checked: boolean) => {
@@ -890,7 +932,7 @@ const WebDAVWriteback = () => {
     )
   }
 
-  const eligibleActiveRows = () => sortedActiveRows().filter(reuploadEligible)
+  const eligibleActiveRows = () => sortedActiveRows().filter(actionable)
 
   const allEligibleActiveSelected = () => {
     const eligible = eligibleActiveRows()
@@ -910,10 +952,37 @@ const WebDAVWriteback = () => {
     setSelectedActive((current) => Array.from(new Set([...current, ...ids])))
   }
 
-  const reuploadSelected = () => {
-    const ids = selectedActive()
-      .map((id) => Number(id))
+  const selectedRows = () => {
+    const selected = new Set(selectedActive())
+    return activeRows().filter((row) => selected.has(row.id))
+  }
+
+  const selectedIDs = (predicate: (row: ActiveRow) => boolean) =>
+    selectedRows()
+      .filter(predicate)
+      .map((row) => Number(row.id))
       .filter(Number.isFinite)
+
+  const startSelected = () => {
+    const ids = selectedIDs((row) => actionable(row) && row.paused)
+    if (!ids.length) return
+    void run(async () => {
+      await batchAction("resume", ids)
+      setSelectedActive([])
+    })
+  }
+
+  const pauseSelected = () => {
+    const ids = selectedIDs((row) => actionable(row) && !row.paused)
+    if (!ids.length) return
+    void run(async () => {
+      await batchAction("pause", ids)
+      setSelectedActive([])
+    })
+  }
+
+  const reuploadSelected = () => {
+    const ids = selectedIDs(reuploadEligible)
     if (!ids.length) return
     if (
       !window.confirm(
@@ -922,9 +991,22 @@ const WebDAVWriteback = () => {
     )
       return
     void run(async () => {
-      await reuploadNow(ids)
+      await batchAction("reupload", ids)
       setSelectedActive([])
     })
+  }
+
+  const startAll = () => void run(() => batchAction("resume", [], true))
+
+  const pauseAll = () => {
+    if (!window.confirm(t("webdav_writeback.active.confirm_pause_all"))) return
+    void run(() => batchAction("pause", [], true))
+  }
+
+  const reuploadAll = () => {
+    if (!window.confirm(t("webdav_writeback.active.confirm_reupload_all")))
+      return
+    void run(() => batchAction("reupload", [], true))
   }
 
   const loadHistory = async () => {
@@ -1668,6 +1750,10 @@ const WebDAVWriteback = () => {
             value={summary()?.automatic_recovery || 0}
           />
           <StatCard
+            label={t("webdav_writeback.overview.paused")}
+            value={summary()?.paused || 0}
+          />
+          <StatCard
             label={t("webdav_writeback.overview.remote_hash_mismatch")}
             value={summary()?.remote_hash_mismatch || 0}
           />
@@ -1748,9 +1834,38 @@ const WebDAVWriteback = () => {
             value={activeSearch()}
             onInput={(e) => setActiveSearch(e.currentTarget.value)}
           />
+          <Button variant="outline" onClick={startAll}>
+            {t("webdav_writeback.active.start_all")}
+          </Button>
+          <Button variant="outline" onClick={pauseAll}>
+            {t("webdav_writeback.active.pause_all")}
+          </Button>
+          <Button colorScheme="accent" variant="outline" onClick={reuploadAll}>
+            {t("webdav_writeback.active.reupload_all")}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={
+              !selectedRows().some((row) => actionable(row) && row.paused)
+            }
+            onClick={startSelected}
+          >
+            {t("webdav_writeback.active.start_selected")} (
+            {selectedActive().length})
+          </Button>
+          <Button
+            variant="outline"
+            disabled={
+              !selectedRows().some((row) => actionable(row) && !row.paused)
+            }
+            onClick={pauseSelected}
+          >
+            {t("webdav_writeback.active.pause_selected")} (
+            {selectedActive().length})
+          </Button>
           <Button
             colorScheme="accent"
-            disabled={!selectedActive().length}
+            disabled={!selectedRows().some(reuploadEligible)}
             onClick={reuploadSelected}
           >
             {t("webdav_writeback.active.batch_reupload")} (
@@ -2021,7 +2136,7 @@ const WebDAVWriteback = () => {
                       <Td>
                         <Checkbox
                           checked={selectedActive().includes(row.id)}
-                          disabled={!reuploadEligible(row)}
+                          disabled={!actionable(row)}
                           onChange={(e: any) =>
                             toggleActive(row.id, e.currentTarget.checked)
                           }
@@ -2125,22 +2240,47 @@ const WebDAVWriteback = () => {
                             ? translateValue("action", row.operator_action)
                             : t("webdav_writeback.action.none")}
                         </Text>
-                        <Show when={reuploadEligible(row)}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            mt="$1"
-                            onClick={() => reuploadRow(row)}
-                          >
-                            {t("webdav_writeback.active.reupload_now")}
-                          </Button>
+                        <Show when={actionable(row)}>
+                          <HStack mt="$1" spacing="$1" wrap="wrap">
+                            <Show
+                              when={row.paused}
+                              fallback={
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => pauseRow(row)}
+                                >
+                                  {t("webdav_writeback.active.pause")}
+                                </Button>
+                              }
+                            >
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => resumeRow(row)}
+                              >
+                                {t("webdav_writeback.active.start")}
+                              </Button>
+                            </Show>
+                            <Show when={reuploadEligible(row)}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => reuploadRow(row)}
+                              >
+                                {t("webdav_writeback.active.reupload_now")}
+                              </Button>
+                            </Show>
+                          </HStack>
                         </Show>
                       </Td>
                       <Td>
                         <Badge
                           colorScheme={stateColor(row.provider_state) as any}
                         >
-                          {translateValue("state", row.provider_state)}
+                          {row.paused
+                            ? translateValue("state", "paused")
+                            : translateValue("state", row.provider_state)}
                         </Badge>
                       </Td>
                       <Td>

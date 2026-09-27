@@ -65,7 +65,8 @@
     "used": "used",
     "total": "total",
     "max_pending_spool": "Max pending spool",
-    "reserve_free_space": "Reserve free space"
+    "reserve_free_space": "Reserve free space",
+    "paused": "Paused"
   },
   "cache": {
     "title": "Completed cache maintenance",
@@ -83,8 +84,18 @@
     "empty": "No active writeback work.",
     "reupload_now": "Re-upload now",
     "reupload_now_scheduled": "Immediate re-upload scheduled:",
-    "batch_reupload": "Batch re-upload",
-    "confirm_batch_reupload": "Immediately re-upload selected tasks. Count:"
+    "batch_reupload": "Re-upload selected",
+    "confirm_batch_reupload": "Immediately re-upload selected tasks. Count:",
+    "start": "Start",
+    "pause": "Pause",
+    "start_all": "Start all",
+    "pause_all": "Pause all",
+    "reupload_all": "Re-upload all",
+    "start_selected": "Start selected",
+    "pause_selected": "Pause selected",
+    "batch_action_done": "Batch action processed:",
+    "confirm_pause_all": "Pause all pausable active tasks? In-flight uploads will stop as soon as possible while keeping the durable local spool.",
+    "confirm_reupload_all": "Immediately re-upload every eligible task? This bypasses provider verification and reuses the durable local spool."
   },
   "history": {
     "rows": "History rows",
@@ -147,7 +158,8 @@
     "completed": "Completed",
     "deleted": "Deleted",
     "error": "Errors",
-    "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload"
+    "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload",
+    "paused": "Paused"
   },
   "result": {
     "completed": "Completed",
@@ -198,7 +210,8 @@
     "syncing": "Syncing",
     "completed": "Completed",
     "waiting_reupload": "Waiting for Cloud Sync re-upload",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "paused": "Paused"
   },
   "status": {
     "waiting_cloudsync_reupload": "Waiting for Cloud Sync re-upload",
@@ -215,10 +228,12 @@
     "queued": "Queued",
     "uploading": "Uploading",
     "verifying": "Verifying",
-    "receiving": "Receiving"
+    "receiving": "Receiving",
+    "paused": "Paused"
   },
   "action": {
     "restart_cloudsync": "Restart Cloud Sync task",
-    "none": "No action"
+    "none": "No action",
+    "paused_by_operator": "Paused by operator"
   }
 }
