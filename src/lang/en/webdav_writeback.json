@@ -81,8 +81,10 @@
   "active": {
     "description": "Live work, retry/recovery and errors. Completed generations remain in History; no synthetic upload percentage is generated.",
     "empty": "No active writeback work.",
-    "verify_now": "Verify now",
-    "verify_now_scheduled": "Verification scheduled:"
+    "reupload_now": "Re-upload now",
+    "reupload_now_scheduled": "Immediate re-upload scheduled:",
+    "batch_reupload": "Batch re-upload",
+    "confirm_batch_reupload": "Immediately re-upload selected tasks. Count:"
   },
   "history": {
     "rows": "History rows",

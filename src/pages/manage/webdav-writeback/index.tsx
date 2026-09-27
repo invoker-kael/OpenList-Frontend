@@ -176,7 +176,7 @@ type HistoryCleanup = {
   deleted: number
 }
 
-type VerifyNowResult = {
+type ReuploadNowResult = {
   scheduled: number
 }
 
@@ -403,6 +403,7 @@ type ColumnWidths = Record<string, number>
 
 const COLUMN_WIDTH_MIN = 56
 const ACTIVE_COLUMN_WIDTHS: ColumnWidths = {
+  select: 56,
   path: 420,
   size: 100,
   progress: 150,
@@ -656,6 +657,7 @@ const WebDAVWriteback = () => {
     loadLocalChoice(activePageSizeStorageKey, "50", PAGE_SIZE_CHOICES),
   )
   const [activeTotal, setActiveTotal] = createSignal(0)
+  const [selectedActive, setSelectedActive] = createSignal<string[]>([])
   const [activeSortKey, setActiveSortKey] =
     createSignal<ActiveSortKey>("updated")
   const [activeSortDirection, setActiveSortDirection] =
@@ -830,6 +832,10 @@ const WebDAVWriteback = () => {
     setSummary(await get<Summary>("/summary"))
   }
 
+  const reuploadEligible = (row: ActiveRow) =>
+    !row.is_dir &&
+    (row.provider_state === "verifying" || row.provider_state === "queued")
+
   const loadActive = async () => {
     const params = new URLSearchParams({
       state: activeState(),
@@ -849,20 +855,73 @@ const WebDAVWriteback = () => {
       setActivePage(pageCount)
       return
     }
-    setActiveRows(result.items || [])
+    const rows = result.items || []
+    setActiveRows(rows)
+    const visibleEligible = new Set(
+      rows.filter(reuploadEligible).map((row) => row.id),
+    )
+    setSelectedActive((current) =>
+      current.filter((id) => visibleEligible.has(id)),
+    )
   }
 
-  const verifyNow = (row: ActiveRow) => {
-    if (row.provider_state !== "verifying") return
-    void run(async () => {
-      const result = await post<VerifyNowResult>("/verify-now", {
-        ids: [Number(row.id)],
-      })
-      notify.success(
-        `${t("webdav_writeback.active.verify_now_scheduled")} ${result.scheduled}`,
+  const reuploadNow = async (ids: number[]) => {
+    if (!ids.length) return
+    const result = await post<ReuploadNowResult>("/reupload-now", { ids })
+    notify.success(
+      `${t("webdav_writeback.active.reupload_now_scheduled")} ${result.scheduled}`,
+    )
+    await Promise.all([loadOverview(), loadActive()])
+    setLastUpdated(new Date())
+  }
+
+  const reuploadRow = (row: ActiveRow) => {
+    if (!reuploadEligible(row)) return
+    void run(() => reuploadNow([Number(row.id)]))
+  }
+
+  const toggleActive = (id: string, checked: boolean) => {
+    setSelectedActive((current) =>
+      checked
+        ? current.includes(id)
+          ? current
+          : [...current, id]
+        : current.filter((item) => item !== id),
+    )
+  }
+
+  const eligibleActiveRows = () => sortedActiveRows().filter(reuploadEligible)
+
+  const allEligibleActiveSelected = () => {
+    const eligible = eligibleActiveRows()
+    return (
+      eligible.length > 0 &&
+      eligible.every((row) => selectedActive().includes(row.id))
+    )
+  }
+
+  const toggleAllActive = (checked: boolean) => {
+    const ids = eligibleActiveRows().map((row) => row.id)
+    if (!checked) {
+      const remove = new Set(ids)
+      setSelectedActive((current) => current.filter((id) => !remove.has(id)))
+      return
+    }
+    setSelectedActive((current) => Array.from(new Set([...current, ...ids])))
+  }
+
+  const reuploadSelected = () => {
+    const ids = selectedActive().map((id) => Number(id)).filter(Number.isFinite)
+    if (!ids.length) return
+    if (
+      !window.confirm(
+        `${t("webdav_writeback.active.confirm_batch_reupload")} ${ids.length}`,
       )
-      await Promise.all([loadOverview(), loadActive()])
-      setLastUpdated(new Date())
+    )
+      return
+    void run(async () => {
+      await reuploadNow(ids)
+      setSelectedActive([])
     })
   }
 
@@ -1687,6 +1746,14 @@ const WebDAVWriteback = () => {
             value={activeSearch()}
             onInput={(e) => setActiveSearch(e.currentTarget.value)}
           />
+          <Button
+            colorScheme="accent"
+            disabled={!selectedActive().length}
+            onClick={reuploadSelected}
+          >
+            {t("webdav_writeback.active.batch_reupload")} (
+            {selectedActive().length})
+          </Button>
           <Button variant="outline" onClick={resetActiveColumnWidths}>
             {t("webdav_writeback.common.reset_column_widths")}
           </Button>
@@ -1704,6 +1771,18 @@ const WebDAVWriteback = () => {
           >
             <Thead>
               <Tr>
+                <ResizableTh
+                  width={activeColumnWidths().select}
+                  onResize={(width) => setActiveColumnWidth("select", width)}
+                >
+                  <Checkbox
+                    checked={allEligibleActiveSelected()}
+                    disabled={!eligibleActiveRows().length}
+                    onChange={(e: any) =>
+                      toggleAllActive(e.currentTarget.checked)
+                    }
+                  />
+                </ResizableTh>
                 <ResizableTh
                   width={activeColumnWidths().path}
                   onResize={(width) => setActiveColumnWidth("path", width)}
@@ -1926,7 +2005,7 @@ const WebDAVWriteback = () => {
                 when={sortedActiveRows().length}
                 fallback={
                   <Tr>
-                    <Td colSpan={13}>
+                    <Td colSpan={14}>
                       <Text color="$neutral10">
                         {t("webdav_writeback.active.empty")}
                       </Text>
@@ -1937,6 +2016,15 @@ const WebDAVWriteback = () => {
                 <For each={sortedActiveRows()}>
                   {(row) => (
                     <Tr>
+                      <Td>
+                        <Checkbox
+                          checked={selectedActive().includes(row.id)}
+                          disabled={!reuploadEligible(row)}
+                          onChange={(e: any) =>
+                            toggleActive(row.id, e.currentTarget.checked)
+                          }
+                        />
+                      </Td>
                       <Td>
                         <Text
                           title={row.path}
@@ -2035,14 +2123,14 @@ const WebDAVWriteback = () => {
                             ? translateValue("action", row.operator_action)
                             : t("webdav_writeback.action.none")}
                         </Text>
-                        <Show when={row.provider_state === "verifying"}>
+                        <Show when={reuploadEligible(row)}>
                           <Button
                             size="sm"
                             variant="outline"
                             mt="$1"
-                            onClick={() => verifyNow(row)}
+                            onClick={() => reuploadRow(row)}
                           >
-                            {t("webdav_writeback.active.verify_now")}
+                            {t("webdav_writeback.active.reupload_now")}
                           </Button>
                         </Show>
                       </Td>
