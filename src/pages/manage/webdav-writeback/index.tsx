@@ -85,6 +85,7 @@ type ActiveRow = {
   provider_state: string
   effective_status: string
   operator_action?: string
+  paused: boolean
   generation: number
   remote_generation: number
   etag: string
