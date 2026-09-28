@@ -2314,7 +2314,9 @@ const WebDAVWriteback = () => {
                                 onClick={() => {
                                   if (
                                     !window.confirm(
-                                      t("webdav_writeback.active.confirm_cancel_one"),
+                                      t(
+                                        "webdav_writeback.active.confirm_cancel_one",
+                                      ),
                                     )
                                   )
                                     return
