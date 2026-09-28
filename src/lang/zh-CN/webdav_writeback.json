@@ -108,7 +108,7 @@
     "recovery_evidence": "恢复记录",
     "remote_missing_rehydrate": "远端缺失 / 需重传",
     "delete_title": "清理历史记录",
-    "delete_description": "只删除 WebDAVWritebackHistory 审计记录，不会改变当前 Canonical 状态、删除缓存/远端数据、触发重新上传或影响 PROPFIND。",
+    "delete_description": "只删除 WebDAVWritebackHistory 审计记录，不会改变当前 Canonical 状态、缓存/远端数据或触发重新上传。保留天数填 0 表示立即清理该分类全部记录。",
     "delete_selected": "删除选中记录",
     "delete_by_class": "按分类删除",
     "older_than_days": "早于多少天",
@@ -118,8 +118,10 @@
     "success_age_required": "清理成功记录时必须填写大于 0 的保留天数。",
     "days": "天",
     "confirm_class": "删除历史分类：",
-    "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响。",
-    "status_description": "“最终状态”是运维判断的主要依据。原始历史结果、恢复类型和旧错误仅保留在“高级信息”中用于审计。"
+    "confirm_class_safety": "当前 Canonical、缓存和远端状态不会受到影响；0 天表示立即清理。",
+    "status_description": "“最终状态”是运维判断的主要依据。原始历史结果、恢复类型和旧错误仅保留在“高级信息”中用于审计。",
+    "no_age_limit": "不限时间",
+    "older_than_days_hint": "0 表示不限制时间，立即清理该分类的所有历史记录。"
   },
   "table": {
     "path": "路径",
@@ -182,7 +184,8 @@
     "successful": "成功记录",
     "recovery": "恢复记录",
     "error": "错误记录",
-    "remote_missing": "远端缺失记录"
+    "remote_missing": "远端缺失记录",
+    "all": "全部历史记录"
   },
   "settings": {
     "title": "写回设置",

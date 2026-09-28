@@ -691,8 +691,8 @@ const WebDAVWriteback = () => {
   )
   const [historyTotal, setHistoryTotal] = createSignal(0)
   const [selectedHistory, setSelectedHistory] = createSignal<number[]>([])
-  const [cleanupClass, setCleanupClass] = createSignal("successful")
-  const [cleanupDays, setCleanupDays] = createSignal(30)
+  const [cleanupClass, setCleanupClass] = createSignal("all")
+  const [cleanupDays, setCleanupDays] = createSignal(0)
 
   const activeColumnStorageKey = "webdav-writeback-active-column-widths-v1"
   const historyColumnStorageKey = "webdav-writeback-history-column-widths-v1"
@@ -1255,13 +1255,11 @@ const WebDAVWriteback = () => {
 
   const deleteHistoryClass = () => {
     const cls = cleanupClass()
-    const days = cleanupDays()
-    if (cls === "successful" && days <= 0) {
-      setHistoryStatus(t("webdav_writeback.history.success_age_required"))
-      return
-    }
+    const days = Math.max(0, cleanupDays())
     const age =
-      days > 0 ? ` · ${days} ${t("webdav_writeback.history.days")}` : ""
+      days > 0
+        ? ` · ${days} ${t("webdav_writeback.history.days")}`
+        : ` · ${t("webdav_writeback.history.no_age_limit")}`
     if (
       !window.confirm(
         `${t("webdav_writeback.history.confirm_class")} ${translateValue(
@@ -1279,6 +1277,7 @@ const WebDAVWriteback = () => {
       setHistoryStatus(
         `${t("webdav_writeback.history.deleted_rows")} ${result.deleted}`,
       )
+      setSelectedHistory([])
       await loadHistory()
       setLastUpdated(new Date())
     })
@@ -1644,6 +1643,7 @@ const WebDAVWriteback = () => {
   ]
 
   const cleanupChoices = (): Choice[] => [
+    { value: "all", label: t("webdav_writeback.cleanup.all") },
     { value: "successful", label: t("webdav_writeback.cleanup.successful") },
     { value: "recovery", label: t("webdav_writeback.cleanup.recovery") },
     { value: "error", label: t("webdav_writeback.cleanup.error") },
@@ -2492,6 +2492,7 @@ const WebDAVWriteback = () => {
               value={cleanupDays()}
               onInput={(e) => setCleanupDays(Number(e.currentTarget.value))}
               aria-label={t("webdav_writeback.history.older_than_days")}
+              title={t("webdav_writeback.history.older_than_days_hint")}
             />
             <Button
               colorScheme="danger"

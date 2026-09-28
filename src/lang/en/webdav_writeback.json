@@ -108,7 +108,7 @@
     "recovery_evidence": "Recovery evidence",
     "remote_missing_rehydrate": "Remote missing / rehydrate",
     "delete_title": "Delete History",
-    "delete_description": "Deletes only WebDAVWritebackHistory rows. It cannot change current canonical state, delete spool/provider data, trigger re-upload, or affect PROPFIND.",
+    "delete_description": "Deletes only WebDAVWritebackHistory audit rows. It cannot change current canonical state, spool/provider data, or trigger re-upload. Set retention days to 0 to delete all matching rows immediately.",
     "delete_selected": "Delete selected",
     "delete_by_class": "Delete by class",
     "older_than_days": "Older than days",
@@ -118,8 +118,10 @@
     "success_age_required": "Successful History cleanup requires a positive age.",
     "days": "days",
     "confirm_class": "Delete History class:",
-    "confirm_class_safety": "Current canonical/spool/provider state is untouched.",
-    "status_description": "Final Status is the operator-facing answer. Raw historical result, recovery type and old errors are retained under Advanced for audit only."
+    "confirm_class_safety": "Current canonical/spool/provider state is untouched; 0 days means immediate cleanup.",
+    "status_description": "Final Status is the operator-facing answer. Raw historical result, recovery type and old errors are retained under Advanced for audit only.",
+    "no_age_limit": "no age limit",
+    "older_than_days_hint": "0 means no age limit and deletes all matching history rows immediately."
   },
   "table": {
     "path": "Path",
@@ -182,7 +184,8 @@
     "successful": "Successful History",
     "recovery": "Recovery History",
     "error": "Error History",
-    "remote_missing": "Remote missing"
+    "remote_missing": "Remote missing",
+    "all": "All History"
   },
   "settings": {
     "title": "Writeback settings",
