@@ -2330,29 +2330,29 @@ const WebDAVWriteback = () => {
                               </Button>
                             </Show>
                           </HStack>
-                        <Show when={!actionable(row) && resettable(row)}>
-                          <Button
-                            size="sm"
-                            colorScheme="danger"
-                            variant="outline"
-                            mt="$1"
-                            onClick={() => {
-                              if (
-                                !window.confirm(
-                                  t(
-                                    "webdav_writeback.active.confirm_cancel_one",
-                                  ),
+                          <Show when={!actionable(row) && resettable(row)}>
+                            <Button
+                              size="sm"
+                              colorScheme="danger"
+                              variant="outline"
+                              mt="$1"
+                              onClick={() => {
+                                if (
+                                  !window.confirm(
+                                    t(
+                                      "webdav_writeback.active.confirm_cancel_one",
+                                    ),
+                                  )
                                 )
-                              )
-                                return
-                              void run(() =>
-                                batchAction("cancel", [Number(row.id)]),
-                              )
-                            }}
-                          >
-                            {t("webdav_writeback.active.cancel")}
-                          </Button>
-                        </Show>
+                                  return
+                                void run(() =>
+                                  batchAction("cancel", [Number(row.id)]),
+                                )
+                              }}
+                            >
+                              {t("webdav_writeback.active.cancel")}
+                            </Button>
+                          </Show>
                         </Show>
                       </Td>
                       <Td>
