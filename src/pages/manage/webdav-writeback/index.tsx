@@ -892,7 +892,7 @@ const WebDAVWriteback = () => {
   }
 
   const batchAction = async (
-    action: "pause" | "resume" | "reupload",
+    action: "pause" | "resume" | "reupload" | "cancel",
     ids: number[] = [],
     all = false,
   ) => {
@@ -997,6 +997,21 @@ const WebDAVWriteback = () => {
     })
   }
 
+  const cancelSelected = () => {
+    const ids = selectedIDs((row) => actionable(row) && !row.is_dir)
+    if (!ids.length) return
+    if (
+      !window.confirm(
+        `${t("webdav_writeback.active.confirm_cancel_selected")} ${ids.length}`,
+      )
+    )
+      return
+    void run(async () => {
+      await batchAction("cancel", ids)
+      setSelectedActive([])
+    })
+  }
+
   const startAll = () => void run(() => batchAction("resume", [], true))
 
   const pauseAll = () => {
@@ -1008,6 +1023,11 @@ const WebDAVWriteback = () => {
     if (!window.confirm(t("webdav_writeback.active.confirm_reupload_all")))
       return
     void run(() => batchAction("reupload", [], true))
+  }
+
+  const cancelAll = () => {
+    if (!window.confirm(t("webdav_writeback.active.confirm_cancel_all"))) return
+    void run(() => batchAction("cancel", [], true))
   }
 
   const loadHistory = async () => {
@@ -1844,6 +1864,9 @@ const WebDAVWriteback = () => {
           <Button colorScheme="accent" variant="outline" onClick={reuploadAll}>
             {t("webdav_writeback.active.reupload_all")}
           </Button>
+          <Button colorScheme="danger" variant="outline" onClick={cancelAll}>
+            {t("webdav_writeback.active.cancel_all")}
+          </Button>
           <Button
             variant="outline"
             disabled={
@@ -1870,6 +1893,17 @@ const WebDAVWriteback = () => {
             onClick={reuploadSelected}
           >
             {t("webdav_writeback.active.batch_reupload")} (
+            {selectedActive().length})
+          </Button>
+          <Button
+            colorScheme="danger"
+            variant="outline"
+            disabled={
+              !selectedRows().some((row) => actionable(row) && !row.is_dir)
+            }
+            onClick={cancelSelected}
+          >
+            {t("webdav_writeback.active.cancel_selected")} (
             {selectedActive().length})
           </Button>
           <Button variant="outline" onClick={resetActiveColumnWidths}>
@@ -2270,6 +2304,26 @@ const WebDAVWriteback = () => {
                                 onClick={() => reuploadRow(row)}
                               >
                                 {t("webdav_writeback.active.reupload_now")}
+                              </Button>
+                            </Show>
+                            <Show when={!row.is_dir}>
+                              <Button
+                                size="sm"
+                                colorScheme="danger"
+                                variant="outline"
+                                onClick={() => {
+                                  if (
+                                    !window.confirm(
+                                      t("webdav_writeback.active.confirm_cancel_one"),
+                                    )
+                                  )
+                                    return
+                                  void run(() =>
+                                    batchAction("cancel", [Number(row.id)]),
+                                  )
+                                }}
+                              >
+                                {t("webdav_writeback.active.cancel")}
                               </Button>
                             </Show>
                           </HStack>

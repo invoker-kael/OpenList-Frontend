@@ -95,7 +95,13 @@
     "pause_selected": "暂停选中",
     "batch_action_done": "批量操作已处理：",
     "confirm_pause_all": "确认暂停全部可暂停的活动任务？正在上传的任务会尽快中断并保留本地持久缓存。",
-    "confirm_reupload_all": "确认立即重传全部可重传任务？该操作会绕过远端验证并直接使用本地持久缓存重新上传。"
+    "confirm_reupload_all": "确认立即重传全部可重传任务？该操作会绕过远端验证并直接使用本地持久缓存重新上传。",
+    "cancel": "取消",
+    "cancel_all": "全部取消",
+    "cancel_selected": "取消选中",
+    "confirm_cancel_one": "确认取消这个任务并交回 Cloud Sync 重传？本地持久缓存会保留，任务会进入等待 Cloud Sync 重传状态。",
+    "confirm_cancel_selected": "确认取消选中的任务并交回 Cloud Sync 重传，数量：",
+    "confirm_cancel_all": "确认取消全部可取消的活动文件任务？正在上传的任务会尽快中断，本地持久缓存保留，并进入等待 Cloud Sync 重传状态。之后需要重启或重新扫描 Cloud Sync 触发新的 PUT。"
   },
   "history": {
     "rows": "历史记录数",
