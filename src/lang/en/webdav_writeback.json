@@ -96,12 +96,12 @@
     "batch_action_done": "Batch action processed:",
     "confirm_pause_all": "Pause all pausable active tasks? In-flight uploads will stop as soon as possible while keeping the durable local spool.",
     "confirm_reupload_all": "Immediately re-upload every eligible task? This bypasses provider verification and reuses the durable local spool.",
-    "cancel": "Cancel",
-    "cancel_all": "Cancel all",
-    "cancel_selected": "Cancel selected",
-    "confirm_cancel_one": "Cancel this task and hand it back to Cloud Sync for re-upload? The durable local spool is preserved and the task enters the Cloud Sync rehydrate state.",
-    "confirm_cancel_selected": "Cancel the selected tasks and hand them back to Cloud Sync for re-upload. Count:",
-    "confirm_cancel_all": "Cancel all cancellable active file tasks? In-flight uploads will stop as soon as possible, the durable local spool is preserved, and tasks enter the Cloud Sync rehydrate state. Restart or rescan Cloud Sync to trigger fresh PUTs."
+    "cancel": "Force reset",
+    "cancel_all": "Force reset all",
+    "cancel_selected": "Force reset selected",
+    "confirm_cancel_one": "Force-reset this task? The current generation, task state, and local spool will be cleared and WebDAV will report the path as missing so Cloud Sync can upload it again. The existing remote 115 object is not deleted.",
+    "confirm_cancel_selected": "Force-reset the selected tasks. Count:",
+    "confirm_cancel_all": "Force-reset all active file tasks? Queued, uploading, verifying, rehydrate-waiting, and repair-waiting tasks are invalidated, their task state and local spool are cleared, and WebDAV temporarily hides the paths until Cloud Sync sends fresh PUTs. Existing remote 115 objects are not deleted."
   },
   "history": {
     "rows": "History rows",

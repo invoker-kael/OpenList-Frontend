@@ -848,6 +848,9 @@ const WebDAVWriteback = () => {
     !row.id.startsWith("receive:") &&
     ["queued", "uploading", "verifying"].includes(row.provider_state)
 
+  const resettable = (row: ActiveRow) =>
+    !row.id.startsWith("receive:") && !row.is_dir
+
   const reuploadEligible = (row: ActiveRow) =>
     !row.is_dir &&
     (row.provider_state === "verifying" || row.provider_state === "queued")
@@ -873,11 +876,11 @@ const WebDAVWriteback = () => {
     }
     const rows = result.items || []
     setActiveRows(rows)
-    const visibleActionable = new Set(
-      rows.filter(actionable).map((row) => row.id),
+    const visibleResettable = new Set(
+      rows.filter(resettable).map((row) => row.id),
     )
     setSelectedActive((current) =>
-      current.filter((id) => visibleActionable.has(id)),
+      current.filter((id) => visibleResettable.has(id)),
     )
   }
 
@@ -933,7 +936,7 @@ const WebDAVWriteback = () => {
     )
   }
 
-  const eligibleActiveRows = () => sortedActiveRows().filter(actionable)
+  const eligibleActiveRows = () => sortedActiveRows().filter(resettable)
 
   const allEligibleActiveSelected = () => {
     const eligible = eligibleActiveRows()
@@ -998,7 +1001,7 @@ const WebDAVWriteback = () => {
   }
 
   const cancelSelected = () => {
-    const ids = selectedIDs((row) => actionable(row) && !row.is_dir)
+    const ids = selectedIDs(resettable)
     if (!ids.length) return
     if (
       !window.confirm(
@@ -1898,9 +1901,7 @@ const WebDAVWriteback = () => {
           <Button
             colorScheme="danger"
             variant="outline"
-            disabled={
-              !selectedRows().some((row) => actionable(row) && !row.is_dir)
-            }
+            disabled={!selectedRows().some(resettable)}
             onClick={cancelSelected}
           >
             {t("webdav_writeback.active.cancel_selected")} (
@@ -2171,7 +2172,7 @@ const WebDAVWriteback = () => {
                       <Td>
                         <Checkbox
                           checked={selectedActive().includes(row.id)}
-                          disabled={!actionable(row)}
+                          disabled={!resettable(row)}
                           onChange={(e: any) =>
                             toggleActive(row.id, e.currentTarget.checked)
                           }
@@ -2329,6 +2330,29 @@ const WebDAVWriteback = () => {
                               </Button>
                             </Show>
                           </HStack>
+                        <Show when={!actionable(row) && resettable(row)}>
+                          <Button
+                            size="sm"
+                            colorScheme="danger"
+                            variant="outline"
+                            mt="$1"
+                            onClick={() => {
+                              if (
+                                !window.confirm(
+                                  t(
+                                    "webdav_writeback.active.confirm_cancel_one",
+                                  ),
+                                )
+                              )
+                                return
+                              void run(() =>
+                                batchAction("cancel", [Number(row.id)]),
+                              )
+                            }}
+                          >
+                            {t("webdav_writeback.active.cancel")}
+                          </Button>
+                        </Show>
                         </Show>
                       </Td>
                       <Td>
