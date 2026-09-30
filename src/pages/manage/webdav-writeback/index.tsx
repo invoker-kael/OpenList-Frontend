@@ -1337,11 +1337,6 @@ const WebDAVWriteback = () => {
       hint: "webdav_writeback.settings.completed_cache_ttl_hint",
     },
     {
-      key: "completed_remote_probe_seconds",
-      label: "webdav_writeback.settings.completed_remote_probe_seconds",
-      min: 0,
-    },
-    {
       key: "cloudsync_settle_millis",
       label: "webdav_writeback.settings.cloudsync_settle_millis",
       min: 0,
@@ -2757,7 +2752,7 @@ const WebDAVWriteback = () => {
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
                             <br />
-                            Retry {row.retry_count} · Verify {row.verify_count}
+                            Retry {row.retry_count} · Recovery checks {row.verify_count}
                             <br />
                             {t(
                               "webdav_writeback.advanced.provider_upload_duration",
