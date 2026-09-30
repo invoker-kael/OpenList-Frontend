@@ -2752,7 +2752,8 @@ const WebDAVWriteback = () => {
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
                             <br />
-                            Retry {row.retry_count} · Recovery checks {row.verify_count}
+                            Retry {row.retry_count} · Recovery checks{" "}
+                            {row.verify_count}
                             <br />
                             {t(
                               "webdav_writeback.advanced.provider_upload_duration",
