@@ -2074,11 +2074,13 @@ const WebDAVWriteback = () => {
                           {row.path}
                         </Text>
                         <details>
-                          <summary>{t("webdav_writeback.common.advanced")}</summary>
+                          <summary>
+                            {t("webdav_writeback.common.advanced")}
+                          </summary>
                           <Text size="xs" color="$neutral10">
                             Generation {row.generation} · Internal{" "}
-                            {row.provider_state || "-"} · Retry {row.retry_count} ·
-                            Confirm {row.verify_count}
+                            {row.provider_state || "-"} · Retry{" "}
+                            {row.retry_count} · Confirm {row.verify_count}
                             <br />
                             Canonical {row.client_state || "-"} · RemoteVerified{" "}
                             {time(row.remote_verified_at)}
