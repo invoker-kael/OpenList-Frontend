@@ -58,7 +58,7 @@
     "action_required": "需要人工操作",
     "automatic_recovery": "自动恢复中",
     "remote_hash_mismatch": "已完成，远端 Hash 差异",
-    "normal_completed": "正常完成",
+    "normal_completed": "已完成",
     "completed_cache": "已完成缓存",
     "receiving_reservation": "接收预留空间",
     "spool_disk_free": "缓存磁盘可用空间",
@@ -66,7 +66,9 @@
     "total": "总计",
     "max_pending_spool": "最大待处理缓存",
     "reserve_free_space": "磁盘保留空间",
-    "paused": "已暂停"
+    "paused": "已暂停",
+    "processing": "处理中",
+    "failed": "失败"
   },
   "cache": {
     "title": "已完成缓存维护",
@@ -80,7 +82,7 @@
     "confirm_release": "仅释放已通过远端验证的安全缓存？Canonical 状态、历史记录、恢复状态和远端数据都会保留。"
   },
   "active": {
-    "description": "正常上传成功即完成；失败直接按退避重传。仅重启、缓存缺失等异常场景进入恢复检查。已完成 generation 保留在历史记录中。",
+    "description": "Cloud Sync 文件先持久化到本地并立即 ACK；后台上传 115 后必须确认远端实际存在且一致才算完成。确认暂时失败会继续后台重试，达到失败阈值后标记失败并让 Cloud Sync 自动重传。",
     "empty": "当前没有活动的写回任务。",
     "reupload_now": "立即重传到远端",
     "reupload_now_scheduled": "已安排远端重传：",
@@ -96,12 +98,13 @@
     "batch_action_done": "批量操作已处理：",
     "confirm_pause_all": "确认暂停全部可暂停的活动任务？正在上传的任务会尽快中断并保留本地持久缓存。",
     "confirm_reupload_all": "确认立即重传全部可重传任务到远端？会直接使用本地持久缓存重新上传，不执行正常上传后的远端验证。",
-    "cancel": "让 Cloud Sync 重传",
-    "cancel_all": "全部交回 Cloud Sync",
-    "cancel_selected": "选中交回 Cloud Sync",
-    "confirm_cancel_one": "确认把这个任务交回 Cloud Sync？会作废当前 generation、清空任务状态和本地 spool，并让 WebDAV 暂时隐藏该路径，等待 Cloud Sync 重新 PUT。不会删除 115 远端现有文件。",
-    "confirm_cancel_selected": "确认把选中的任务交回 Cloud Sync 重新上传，数量：",
-    "confirm_cancel_all": "确认把全部活动文件任务交回 Cloud Sync？排队、上传、异常恢复检查、等待重传和等待修复任务都会作废当前 generation、清空任务状态和本地 spool，并等待 Cloud Sync 重新 PUT。不会删除 115 远端现有文件。"
+    "cancel": "标记失败并让 CS 重传",
+    "cancel_all": "全部标记失败",
+    "cancel_selected": "选中标记失败",
+    "confirm_cancel_one": "确认放弃当前任务并标记失败？本地任务缓存会被清理，WebDAV 将该路径返回为不存在，让 Cloud Sync 自动重新上传。",
+    "confirm_cancel_selected": "确认将选中任务标记失败并交给 Cloud Sync 自动重传，数量：",
+    "confirm_cancel_all": "确认将全部活动文件任务标记失败？这些路径会对 Cloud Sync 显示为不存在，并由 Cloud Sync 自动重新上传。",
+    "failed_auto_reupload": "确认失败，等待 Cloud Sync 自动重传"
   },
   "history": {
     "rows": "历史记录数",
@@ -139,8 +142,8 @@
     "completed": "完成时间",
     "remote_verified": "恢复检查时间",
     "error": "错误",
-    "final_status": "最终状态",
-    "action": "需要操作",
+    "final_status": "状态",
+    "action": "操作",
     "current_generation": "当前代次",
     "current_state": "当前状态",
     "progress": "进度"
@@ -167,7 +170,8 @@
     "deleted": "已删除",
     "error": "错误",
     "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",
-    "paused": "已暂停"
+    "paused": "已暂停",
+    "failed": "失败"
   },
   "result": {
     "completed": "已完成",
@@ -189,7 +193,7 @@
   },
   "settings": {
     "title": "写回设置",
-    "description": "正常上传成功后直接完成，不再执行远端验证；上传失败按退避直接重传。异常恢复检查仅用于重启、缓存缺失等不确定场景。SpoolDir 为只读，Workers 拓扑和 Enabled 变更可能需要重启。",
+    "description": "Cloud Sync PUT 持久化后由 OpenList 后台上传 115；Provider PUT 成功后还要独立确认 115 实际存在且一致才进入完成。确认暂时失败会继续重试，达到 VerifyAttempts 后标记失败并让 Cloud Sync 自动重传。",
     "enabled": "启用状态",
     "enable_writeback": "启用持久化 WebDAV 写回",
     "read_only": "只读",
@@ -199,15 +203,15 @@
     "workers": "工作线程 (Workers)",
     "upload_workers": "上传线程 (UploadWorkers)",
     "large_upload_workers": "大文件上传线程 (LargeUploadWorkers)",
-    "provider_probe_workers": "异常恢复探测线程 (ProviderProbeWorkers)",
+    "provider_probe_workers": "115 确认线程 (ProviderProbeWorkers)",
     "completed_cache_ttl_minutes": "已完成缓存保留分钟数",
     "completed_remote_probe_seconds": "兼容保留：已完成对象远端探测秒数",
     "cloudsync_settle_millis": "Cloud Sync 收敛等待毫秒",
     "cloudsync_placeholder_millis": "Cloud Sync 占位等待毫秒",
     "retry_initial_seconds": "初始重试秒数",
     "retry_max_seconds": "最大重试秒数",
-    "verify_interval_seconds": "异常恢复检查间隔秒数",
-    "verify_attempts": "异常恢复检查次数",
+    "verify_interval_seconds": "115 确认重试间隔秒数",
+    "verify_attempts": "115 连续确认失败阈值",
     "unlimited_hint": "0 = 不限制",
     "completed_cache_ttl_hint": "-1 = 禁用自动释放已完成缓存",
     "saved_restart": "已保存，需要重启才能应用：",
@@ -216,11 +220,13 @@
   },
   "cloudsync_status": {
     "receiving": "接收中",
-    "syncing": "后台同步中",
+    "syncing": "处理中",
     "completed": "已完成",
     "waiting_reupload": "等待 Cloud Sync 重传",
     "deleted": "已删除",
-    "paused": "已暂停"
+    "paused": "已暂停",
+    "processing": "处理中",
+    "failed": "失败"
   },
   "status": {
     "waiting_cloudsync_reupload": "等待 Cloud Sync 重新上传",
@@ -238,7 +244,8 @@
     "uploading": "上传中",
     "verifying": "异常恢复检查中",
     "receiving": "接收中",
-    "paused": "已暂停"
+    "paused": "已暂停",
+    "failed": "失败"
   },
   "action": {
     "restart_cloudsync": "停用后重新启用 Cloud Sync 任务",

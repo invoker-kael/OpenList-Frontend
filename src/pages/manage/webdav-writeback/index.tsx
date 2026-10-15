@@ -411,18 +411,12 @@ type ColumnWidths = Record<string, number>
 const COLUMN_WIDTH_MIN = 56
 const ACTIVE_COLUMN_WIDTHS: ColumnWidths = {
   select: 56,
-  path: 420,
-  size: 100,
-  progress: 150,
-  status: 140,
-  action: 160,
-  state: 130,
-  recovery: 150,
-  retry: 80,
-  verify: 80,
-  started: 180,
+  path: 460,
+  size: 110,
+  progress: 160,
+  status: 130,
+  action: 260,
   updated: 180,
-  retry_at: 180,
   error: 360,
 }
 const HISTORY_COLUMN_WIDTHS: ColumnWidths = {
@@ -777,8 +771,16 @@ const WebDAVWriteback = () => {
   }
 
   const cloudSyncStatus = (status?: string, action?: string) => {
-    if (action === "restart_cloudsync_required") return "waiting_reupload"
-    if (status === "paused" || action === "paused_by_operator") return "paused"
+    if (
+      status === "failed" ||
+      action === "restart_cloudsync_required" ||
+      status === "needs_cloudsync_reupload" ||
+      status === "remote_missing" ||
+      status === "remote_hash_mismatch" ||
+      status === "waiting_repair"
+    ) {
+      return "failed"
+    }
     switch (status) {
       case "receiving":
       case "reupload_receiving":
@@ -786,10 +788,8 @@ const WebDAVWriteback = () => {
       case "completed":
       case "recovered":
         return "completed"
-      case "deleted":
-        return "deleted"
       default:
-        return "syncing"
+        return "processing"
     }
   }
 
@@ -797,13 +797,11 @@ const WebDAVWriteback = () => {
     switch (value) {
       case "completed":
         return "success"
-      case "waiting_reupload":
+      case "failed":
         return "danger"
       case "receiving":
-      case "syncing":
+      case "processing":
         return "info"
-      case "paused":
-        return "neutral"
       default:
         return "neutral"
     }
@@ -849,7 +847,9 @@ const WebDAVWriteback = () => {
     ["queued", "uploading", "verifying"].includes(row.provider_state)
 
   const resettable = (row: ActiveRow) =>
-    !row.id.startsWith("receive:") && !row.is_dir
+    !row.id.startsWith("receive:") &&
+    !row.is_dir &&
+    row.provider_state !== "failed"
 
   const reuploadEligible = (row: ActiveRow) =>
     !row.is_dir &&
@@ -1401,10 +1401,13 @@ const WebDAVWriteback = () => {
       value: "receiving",
       label: t("webdav_writeback.cloudsync_status.receiving"),
     },
-    { value: "syncing", label: t("webdav_writeback.cloudsync_status.syncing") },
     {
-      value: "waiting_reupload",
-      label: t("webdav_writeback.cloudsync_status.waiting_reupload"),
+      value: "syncing",
+      label: t("webdav_writeback.cloudsync_status.processing"),
+    },
+    {
+      value: "failed",
+      label: t("webdav_writeback.cloudsync_status.failed"),
     },
   ]
 
@@ -1583,6 +1586,7 @@ const WebDAVWriteback = () => {
     { value: "uploading", label: t("webdav_writeback.state.uploading") },
     { value: "verifying", label: t("webdav_writeback.state.verifying") },
     { value: "completed", label: t("webdav_writeback.state.completed") },
+    { value: "failed", label: t("webdav_writeback.state.failed") },
     { value: "deleted", label: t("webdav_writeback.state.deleted") },
   ]
 
@@ -1733,7 +1737,7 @@ const WebDAVWriteback = () => {
       <Show when={tab() === "overview"}>
         <SimpleGrid
           w="$full"
-          columns={{ "@initial": 1, "@sm": 2, "@lg": 4 }}
+          columns={{ "@initial": 1, "@sm": 2, "@lg": 3 }}
           gap="$2"
         >
           <StatCard
@@ -1745,50 +1749,28 @@ const WebDAVWriteback = () => {
             value={summary()?.receiving || 0}
           />
           <StatCard
-            label={t("webdav_writeback.overview.pending_backlog")}
-            value={stateCount("queued") + stateCount("deleted")}
+            label={t("webdav_writeback.overview.processing")}
+            value={
+              stateCount("queued") +
+              stateCount("uploading") +
+              stateCount("verifying") +
+              stateCount("deleted")
+            }
             hint={`${t("webdav_writeback.overview.durable_backlog")} ${bytes(
               summary()?.backlog_bytes,
             )}`}
           />
           <StatCard
-            label={t("webdav_writeback.overview.uploading")}
-            value={stateCount("uploading")}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.verifying")}
-            value={stateCount("verifying")}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.action_required")}
-            value={summary()?.needs_cloudsync_rehydrate || 0}
-            hint={t("webdav_writeback.overview.needs_rehydrate")}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.automatic_recovery")}
-            value={summary()?.automatic_recovery || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.paused")}
-            value={summary()?.paused || 0}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.remote_hash_mismatch")}
-            value={summary()?.remote_hash_mismatch || 0}
-          />
-          <StatCard
             label={t("webdav_writeback.overview.normal_completed")}
+            value={stateCount("completed")}
+          />
+          <StatCard
+            label={t("webdav_writeback.overview.failed")}
             value={
-              stateCount("completed") - (summary()?.remote_hash_mismatch || 0)
+              stateCount("failed") +
+              stateCount("waiting_cloudsync_reupload") +
+              stateCount("waiting_repair")
             }
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.completed_cache")}
-            value={bytes(summary()?.completed_cache_bytes)}
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.receiving_reservation")}
-            value={bytes(summary()?.receiving_reservation_bytes)}
           />
           <StatCard
             label={t("webdav_writeback.overview.spool_disk_free")}
@@ -1805,18 +1787,6 @@ const WebDAVWriteback = () => {
                 summary()?.disk_total_bytes,
               )}`
             }
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.max_pending_spool")}
-            value={
-              summary()?.max_pending_spool_bytes
-                ? bytes(summary()?.max_pending_spool_bytes)
-                : t("webdav_writeback.common.unlimited")
-            }
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.reserve_free_space")}
-            value={bytes(summary()?.reserve_free_space_bytes)}
           />
         </SimpleGrid>
 
@@ -1859,12 +1829,6 @@ const WebDAVWriteback = () => {
           <Button variant="outline" onClick={pauseAll}>
             {t("webdav_writeback.active.pause_all")}
           </Button>
-          <Button colorScheme="accent" variant="outline" onClick={reuploadAll}>
-            {t("webdav_writeback.active.reupload_all")}
-          </Button>
-          <Button colorScheme="danger" variant="outline" onClick={cancelAll}>
-            {t("webdav_writeback.active.cancel_all")}
-          </Button>
           <Button
             variant="outline"
             disabled={
@@ -1885,26 +1849,47 @@ const WebDAVWriteback = () => {
             {t("webdav_writeback.active.pause_selected")} (
             {selectedActive().length})
           </Button>
-          <Button
-            colorScheme="accent"
-            disabled={!selectedRows().some(reuploadEligible)}
-            onClick={reuploadSelected}
-          >
-            {t("webdav_writeback.active.batch_reupload")} (
-            {selectedActive().length})
-          </Button>
-          <Button
-            colorScheme="danger"
-            variant="outline"
-            disabled={!selectedRows().some(resettable)}
-            onClick={cancelSelected}
-          >
-            {t("webdav_writeback.active.cancel_selected")} (
-            {selectedActive().length})
-          </Button>
           <Button variant="outline" onClick={resetActiveColumnWidths}>
             {t("webdav_writeback.common.reset_column_widths")}
           </Button>
+          <details>
+            <summary style={{ cursor: "pointer", "white-space": "nowrap" }}>
+              {t("webdav_writeback.common.advanced")} ▾
+            </summary>
+            <HStack mt="$2" spacing="$2" wrap="wrap">
+              <Button
+                colorScheme="accent"
+                variant="outline"
+                onClick={reuploadAll}
+              >
+                {t("webdav_writeback.active.reupload_all")}
+              </Button>
+              <Button
+                colorScheme="danger"
+                variant="outline"
+                onClick={cancelAll}
+              >
+                {t("webdav_writeback.active.cancel_all")}
+              </Button>
+              <Button
+                colorScheme="accent"
+                disabled={!selectedRows().some(reuploadEligible)}
+                onClick={reuploadSelected}
+              >
+                {t("webdav_writeback.active.batch_reupload")} (
+                {selectedActive().length})
+              </Button>
+              <Button
+                colorScheme="danger"
+                variant="outline"
+                disabled={!selectedRows().some(resettable)}
+                onClick={cancelSelected}
+              >
+                {t("webdav_writeback.active.cancel_selected")} (
+                {selectedActive().length})
+              </Button>
+            </HStack>
+          </details>
         </HStack>
 
         <Box w="$full" overflowX="auto">
@@ -2019,86 +2004,6 @@ const WebDAVWriteback = () => {
                   />
                 </ResizableTh>
                 <ResizableTh
-                  width={activeColumnWidths().state}
-                  onResize={(width) => setActiveColumnWidth("state", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.state")}
-                    sortDirection={
-                      activeSortKey() === "state"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("state", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
-                  width={activeColumnWidths().recovery}
-                  onResize={(width) => setActiveColumnWidth("recovery", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.recovery")}
-                    sortDirection={
-                      activeSortKey() === "recovery"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("recovery", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
-                  width={activeColumnWidths().retry}
-                  onResize={(width) => setActiveColumnWidth("retry", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.retry")}
-                    sortDirection={
-                      activeSortKey() === "retry"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("retry", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
-                  width={activeColumnWidths().verify}
-                  onResize={(width) => setActiveColumnWidth("verify", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.verify")}
-                    sortDirection={
-                      activeSortKey() === "verify"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("verify", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
-                  width={activeColumnWidths().started}
-                  onResize={(width) => setActiveColumnWidth("started", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.started")}
-                    sortDirection={
-                      activeSortKey() === "started"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("started", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
                   width={activeColumnWidths().updated}
                   onResize={(width) => setActiveColumnWidth("updated", width)}
                 >
@@ -2110,22 +2015,6 @@ const WebDAVWriteback = () => {
                         : undefined
                     }
                     onSort={(direction) => setActiveSort("updated", direction)}
-                    ascLabel={t("webdav_writeback.common.sort_asc")}
-                    descLabel={t("webdav_writeback.common.sort_desc")}
-                  />
-                </ResizableTh>
-                <ResizableTh
-                  width={activeColumnWidths().retry_at}
-                  onResize={(width) => setActiveColumnWidth("retry_at", width)}
-                >
-                  <SortableHeader
-                    label={t("webdav_writeback.table.retry_at")}
-                    sortDirection={
-                      activeSortKey() === "retry_at"
-                        ? activeSortDirection()
-                        : undefined
-                    }
-                    onSort={(direction) => setActiveSort("retry_at", direction)}
                     ascLabel={t("webdav_writeback.common.sort_asc")}
                     descLabel={t("webdav_writeback.common.sort_desc")}
                   />
@@ -2153,7 +2042,7 @@ const WebDAVWriteback = () => {
                 when={sortedActiveRows().length}
                 fallback={
                   <Tr>
-                    <Td colSpan={14}>
+                    <Td colSpan={8}>
                       <Text color="$neutral10">
                         {t("webdav_writeback.active.empty")}
                       </Text>
@@ -2185,31 +2074,14 @@ const WebDAVWriteback = () => {
                           {row.path}
                         </Text>
                         <details>
-                          <summary>
-                            {t("webdav_writeback.common.advanced")}
-                          </summary>
+                          <summary>{t("webdav_writeback.common.advanced")}</summary>
                           <Text size="xs" color="$neutral10">
-                            {t("webdav_writeback.advanced.generation")}{" "}
-                            {row.generation} · Canonical{" "}
-                            {row.client_state || "-"}
+                            Generation {row.generation} · Internal{" "}
+                            {row.provider_state || "-"} · Retry {row.retry_count} ·
+                            Confirm {row.verify_count}
                             <br />
-                            ETag {row.etag || "-"}
-                            <br />
-                            RemoteGeneration {row.remote_generation} ·
-                            RemoteVerified {time(row.remote_verified_at)}
-                            <br />
-                            PayloadSHA1 {row.payload_sha1 || "-"}
-                            <br />
-                            RemoteSHA1 {row.remote_sha1 || "-"}
-                            <br />
-                            RemoteObjectID {row.remote_object_id || "-"}
-                            <br />
-                            {t(
-                              "webdav_writeback.advanced.resolution_reason",
-                            )}{" "}
-                            {row.resolution_reason
-                              ? translateValue("status", row.resolution_reason)
-                              : "-"}
+                            Canonical {row.client_state || "-"} · RemoteVerified{" "}
+                            {time(row.remote_verified_at)}
                           </Text>
                         </details>
                       </Td>
@@ -2262,113 +2134,70 @@ const WebDAVWriteback = () => {
                         </Badge>
                       </Td>
                       <Td>
-                        <Text
-                          color={
-                            row.operator_action ? "$danger10" : "$neutral10"
-                          }
-                        >
-                          {row.operator_action
-                            ? translateValue("action", row.operator_action)
-                            : t("webdav_writeback.action.none")}
-                        </Text>
-                        <Show when={actionable(row)}>
-                          <HStack mt="$1" spacing="$1" wrap="wrap">
-                            <Show
-                              when={row.paused}
-                              fallback={
+                        <Show
+                          when={row.provider_state === "failed"}
+                          fallback={
+                            <Show when={actionable(row)} fallback="-">
+                              <HStack spacing="$1" wrap="wrap">
+                                <Show
+                                  when={row.paused}
+                                  fallback={
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => pauseRow(row)}
+                                    >
+                                      {t("webdav_writeback.active.pause")}
+                                    </Button>
+                                  }
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => resumeRow(row)}
+                                  >
+                                    {t("webdav_writeback.active.start")}
+                                  </Button>
+                                </Show>
+                                <Show when={reuploadEligible(row)}>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => reuploadRow(row)}
+                                  >
+                                    {t("webdav_writeback.active.reupload_now")}
+                                  </Button>
+                                </Show>
                                 <Button
                                   size="sm"
+                                  colorScheme="danger"
                                   variant="outline"
-                                  onClick={() => pauseRow(row)}
-                                >
-                                  {t("webdav_writeback.active.pause")}
-                                </Button>
-                              }
-                            >
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => resumeRow(row)}
-                              >
-                                {t("webdav_writeback.active.start")}
-                              </Button>
-                            </Show>
-                            <Show when={reuploadEligible(row)}>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => reuploadRow(row)}
-                              >
-                                {t("webdav_writeback.active.reupload_now")}
-                              </Button>
-                            </Show>
-                            <Show when={!row.is_dir}>
-                              <Button
-                                size="sm"
-                                colorScheme="danger"
-                                variant="outline"
-                                onClick={() => {
-                                  if (
-                                    !window.confirm(
-                                      t(
-                                        "webdav_writeback.active.confirm_cancel_one",
-                                      ),
+                                  onClick={() => {
+                                    if (
+                                      !window.confirm(
+                                        t(
+                                          "webdav_writeback.active.confirm_cancel_one",
+                                        ),
+                                      )
                                     )
-                                  )
-                                    return
-                                  void run(() =>
-                                    batchAction("cancel", [Number(row.id)]),
-                                  )
-                                }}
-                              >
-                                {t("webdav_writeback.active.cancel")}
-                              </Button>
+                                      return
+                                    void run(() =>
+                                      batchAction("cancel", [Number(row.id)]),
+                                    )
+                                  }}
+                                >
+                                  {t("webdav_writeback.active.cancel")}
+                                </Button>
+                              </HStack>
                             </Show>
-                          </HStack>
-                          <Show when={!actionable(row) && resettable(row)}>
-                            <Button
-                              size="sm"
-                              colorScheme="danger"
-                              variant="outline"
-                              mt="$1"
-                              onClick={() => {
-                                if (
-                                  !window.confirm(
-                                    t(
-                                      "webdav_writeback.active.confirm_cancel_one",
-                                    ),
-                                  )
-                                )
-                                  return
-                                void run(() =>
-                                  batchAction("cancel", [Number(row.id)]),
-                                )
-                              }}
-                            >
-                              {t("webdav_writeback.active.cancel")}
-                            </Button>
-                          </Show>
+                          }
+                        >
+                          <Text size="sm" color="$danger10">
+                            {t("webdav_writeback.active.failed_auto_reupload")}
+                          </Text>
                         </Show>
                       </Td>
-                      <Td>
-                        <Badge
-                          colorScheme={stateColor(row.provider_state) as any}
-                        >
-                          {row.paused
-                            ? translateValue("state", "paused")
-                            : translateValue("state", row.provider_state)}
-                        </Badge>
-                      </Td>
-                      <Td>
-                        {row.recovery_state
-                          ? translateValue("recovery", row.recovery_state)
-                          : "-"}
-                      </Td>
-                      <Td>{row.retry_count}</Td>
-                      <Td>{row.verify_count}</Td>
-                      <Td>{time(row.started_at)}</Td>
                       <Td>{time(row.updated_at)}</Td>
-                      <Td>{time(row.retry_at)}</Td>
                       <Td>
                         <Text color={row.last_error ? "$danger10" : undefined}>
                           {row.last_error || "-"}
