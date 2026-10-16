@@ -1361,11 +1361,6 @@ const WebDAVWriteback = () => {
       label: "webdav_writeback.settings.verify_interval_seconds",
       min: 1,
     },
-    {
-      key: "verify_attempts",
-      label: "webdav_writeback.settings.verify_attempts",
-      min: 1,
-    },
   ]
 
   const updateNumericSetting = (key: NumericSetting, value: string) => {
