@@ -45,29 +45,9 @@
     "sort_desc": "Sort descending"
   },
   "overview": {
-    "writeback_enabled": "Writeback enabled",
     "receiving": "Receiving",
-    "pending_backlog": "Pending / backlog",
-    "durable_backlog": "Durable backlog",
-    "uploading": "Uploading",
-    "verifying": "Processing",
-    "errors": "Errors",
-    "restart_recovery": "Restart recovery",
-    "missing_spool": "Missing spool",
-    "needs_rehydrate": "Cloud Sync re-upload required",
-    "action_required": "Action required",
-    "automatic_recovery": "Automatic recovery",
-    "remote_hash_mismatch": "Completed with remote hash difference",
-    "normal_completed": "Completed",
-    "completed_cache": "Completed cache",
-    "receiving_reservation": "Receiving reservation",
-    "spool_disk_free": "Spool disk free",
-    "used": "used",
-    "total": "total",
-    "max_pending_spool": "Max pending spool",
-    "reserve_free_space": "Reserve free space",
-    "paused": "Paused",
     "processing": "Processing",
+    "completed": "Completed",
     "failed": "Failed"
   },
   "cache": {
@@ -255,9 +235,9 @@
   },
   "rebuild": {
     "title": "Full rebuild / gap check",
-    "description": "Clear OpenList WebDAV writeback tasks, history, and local task index without deleting 115 files. Rebuild runs in the background: current PUTs are allowed to finish, while new writes receive a retryable response so the UI and reverse proxy do not time out. On the next Cloud Sync scan, matching size + SHA-1 content already on 115 completes without another upload.",
+    "description": "Rebuild runs in the background. Current PUTs finish first; GET, HEAD, and PROPFIND remain available, while new writes get 503 with Retry-After. OpenList clears its writeback records and local .part/.data spool files, including orphans. It never deletes 115 files. A fresh 115 listing that finds any same-name file with matching size and SHA-1 completes without another upload.",
     "button": "Clear tasks and rebuild",
-    "confirm": "Start a full rebuild? Files on 115 will not be deleted. The background rebuild waits for current PUTs to finish safely; new Cloud Sync writes will retry later.",
+    "confirm": "Start a full rebuild? OpenList will clear its writeback records and local spool files after current PUTs finish. Files on 115 will not be deleted; new Cloud Sync writes will retry later.",
     "running": "Rebuilding in background…",
     "started": "Full rebuild started in the background.",
     "already_running": "A full rebuild is already running."

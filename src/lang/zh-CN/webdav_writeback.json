@@ -45,29 +45,9 @@
     "sort_desc": "降序"
   },
   "overview": {
-    "writeback_enabled": "写回已启用",
     "receiving": "接收中",
-    "pending_backlog": "待处理 / 积压",
-    "durable_backlog": "持久化积压",
-    "uploading": "上传中",
-    "verifying": "处理中",
-    "errors": "错误",
-    "restart_recovery": "重启恢复",
-    "missing_spool": "本地缓存缺失",
-    "needs_rehydrate": "需要 Cloud Sync 重新上传",
-    "action_required": "需要人工操作",
-    "automatic_recovery": "自动恢复中",
-    "remote_hash_mismatch": "已完成，远端 Hash 差异",
-    "normal_completed": "已完成",
-    "completed_cache": "已完成缓存",
-    "receiving_reservation": "接收预留空间",
-    "spool_disk_free": "缓存磁盘可用空间",
-    "used": "已用",
-    "total": "总计",
-    "max_pending_spool": "最大待处理缓存",
-    "reserve_free_space": "磁盘保留空间",
-    "paused": "已暂停",
     "processing": "处理中",
+    "completed": "已完成",
     "failed": "失败"
   },
   "cache": {
@@ -255,9 +235,9 @@
   },
   "rebuild": {
     "title": "全量重建 / 查漏补缺",
-    "description": "清空 OpenList 的 WebDAV 写回任务、历史和本地任务索引，不删除 115 文件。重建在后台执行；正在接收的 PUT 会先完成，重建期间新的写入会返回可重试状态，避免页面或反向代理超时。Cloud Sync 重新扫描后，115 中已有且 Size + SHA1 匹配的文件会直接完成，不重复上传。",
+    "description": "重建在后台执行。当前 PUT 会先完成；GET、HEAD、PROPFIND 仍可使用，新写入会快速返回 503 和 Retry-After。OpenList 清理自己的写回记录以及本地 .part/.data 缓存（包括孤儿文件），不会删除 115 文件。Fresh LIST 找到任意同名且 Size + SHA1 匹配的 115 文件后会直接完成，不重复上传。",
     "button": "清空任务并全量重建",
-    "confirm": "确认开始全量重建？115 上的文件不会删除。后台会等待当前正在接收的 PUT 安全结束后清空任务记录；期间 Cloud Sync 的新写入会稍后自动重试。",
+    "confirm": "确认开始全量重建？当前 PUT 完成后，OpenList 会清理自己的写回记录和本地缓存，不会删除 115 文件；期间 Cloud Sync 的新写入会稍后自动重试。",
     "running": "后台重建中…",
     "started": "全量重建已在后台启动。",
     "already_running": "全量重建已经在运行。"

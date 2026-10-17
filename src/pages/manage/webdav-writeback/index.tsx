@@ -47,13 +47,11 @@ type StateSummary = {
 }
 
 type Summary = {
-  enabled: boolean
   rebuilding: boolean
   workers: number
   receiving: number
   receiving_expected_bytes: number
   receiving_reservation_bytes: number
-  backlog_bytes: number
   completed_cache_bytes: number
   max_pending_spool_bytes: number
   reserve_free_space_bytes: number
@@ -1753,10 +1751,6 @@ const WebDAVWriteback = () => {
           gap="$2"
         >
           <StatCard
-            label={t("webdav_writeback.overview.writeback_enabled")}
-            value={summary()?.enabled ? t("global.yes") : t("global.no")}
-          />
-          <StatCard
             label={t("webdav_writeback.overview.receiving")}
             value={summary()?.receiving || 0}
           />
@@ -1768,12 +1762,9 @@ const WebDAVWriteback = () => {
               stateCount("verifying") +
               stateCount("deleted")
             }
-            hint={`${t("webdav_writeback.overview.durable_backlog")} ${bytes(
-              summary()?.backlog_bytes,
-            )}`}
           />
           <StatCard
-            label={t("webdav_writeback.overview.normal_completed")}
+            label={t("webdav_writeback.overview.completed")}
             value={stateCount("completed")}
           />
           <StatCard
@@ -1782,22 +1773,6 @@ const WebDAVWriteback = () => {
               stateCount("failed") +
               stateCount("waiting_cloudsync_reupload") +
               stateCount("waiting_repair")
-            }
-          />
-          <StatCard
-            label={t("webdav_writeback.overview.spool_disk_free")}
-            value={
-              summary()?.disk_error
-                ? t("webdav_writeback.common.unavailable")
-                : bytes(summary()?.disk_free_bytes)
-            }
-            hint={
-              summary()?.disk_error ||
-              `${t("webdav_writeback.overview.used")} ${bytes(
-                summary()?.disk_used_bytes,
-              )} / ${t("webdav_writeback.overview.total")} ${bytes(
-                summary()?.disk_total_bytes,
-              )}`
             }
           />
         </SimpleGrid>
