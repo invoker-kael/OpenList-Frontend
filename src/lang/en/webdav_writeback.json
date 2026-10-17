@@ -140,6 +140,7 @@
     "provider_upload_duration": "Provider upload",
     "end_to_end_duration": "End-to-end",
     "client_duplicate_puts": "Coalesced client duplicate PUTs",
+    "client_duplicate_bytes": "Duplicate PUT bytes received",
     "provider_upload_attempts": "115 upload attempts",
     "provider_retry_bytes": "Provider-reported retry bytes"
   },

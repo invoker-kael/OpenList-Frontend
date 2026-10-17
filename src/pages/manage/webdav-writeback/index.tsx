@@ -2106,6 +2106,12 @@ const WebDAVWriteback = () => {
                             )}{" "}
                             {row.client_duplicate_puts || 0} ·{" "}
                             {t(
+                              "webdav_writeback.advanced.client_duplicate_bytes",
+                            )}{" "}
+                            {bytes(
+                              (row.client_duplicate_puts || 0) * row.size,
+                            )} ·{" "}
+                            {t(
                               "webdav_writeback.advanced.provider_upload_attempts",
                             )}{" "}
                             {row.provider_upload_attempts || 0}
@@ -2633,6 +2639,12 @@ const WebDAVWriteback = () => {
                               "webdav_writeback.advanced.client_duplicate_puts",
                             )}{" "}
                             {row.client_duplicate_puts || 0} ·{" "}
+                            {t(
+                              "webdav_writeback.advanced.client_duplicate_bytes",
+                            )}{" "}
+                            {bytes(
+                              (row.client_duplicate_puts || 0) * row.size,
+                            )} ·{" "}
                             {t(
                               "webdav_writeback.advanced.provider_upload_attempts",
                             )}{" "}

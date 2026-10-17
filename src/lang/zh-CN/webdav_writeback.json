@@ -140,6 +140,7 @@
     "provider_upload_duration": "单文件远端上传耗时",
     "end_to_end_duration": "端到端总耗时",
     "client_duplicate_puts": "合并的客户端重复 PUT",
+    "client_duplicate_bytes": "重复 PUT 接收字节",
     "provider_upload_attempts": "115 上传次数",
     "provider_retry_bytes": "115 回调报告的重试字节"
   },
