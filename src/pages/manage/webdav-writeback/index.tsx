@@ -76,6 +76,9 @@ type ActiveRow = {
   size: number
   received_bytes?: number
   provider_uploaded_bytes?: number
+  client_duplicate_puts: number
+  provider_upload_attempts: number
+  provider_retry_bytes: number
   client_state: string
   provider_state: string
   effective_status: string
@@ -116,6 +119,9 @@ type HistoryRow = {
   durable_at?: string
   provider_upload_started_at?: string
   provider_upload_completed_at?: string
+  client_duplicate_puts: number
+  provider_upload_attempts: number
+  provider_retry_bytes: number
   completed_at?: string
   result: string
   final_state: string
@@ -2095,6 +2101,13 @@ const WebDAVWriteback = () => {
                             Generation {row.generation} · Retry{" "}
                             {row.retry_count}
                             <br />
+                            {t("webdav_writeback.advanced.client_duplicate_puts")}{" "}
+                            {row.client_duplicate_puts || 0} · {t("webdav_writeback.advanced.provider_upload_attempts")}{" "}
+                            {row.provider_upload_attempts || 0}
+                            <br />
+                            {t("webdav_writeback.advanced.provider_retry_bytes")}{" "}
+                            {bytes(row.provider_retry_bytes || 0)}
+                            <br />
                             Canonical {row.client_state || "-"} · RemoteVerified{" "}
                             {time(row.remote_verified_at)}
                           </Text>
@@ -2608,6 +2621,11 @@ const WebDAVWriteback = () => {
                               "webdav_writeback.advanced.end_to_end_duration",
                             )}{" "}
                             {duration(row.started_at, row.completed_at)}
+                            <br />
+                            {t("webdav_writeback.advanced.client_duplicate_puts")}{" "}
+                            {row.client_duplicate_puts || 0} · {t("webdav_writeback.advanced.provider_upload_attempts")}{" "}
+                            {row.provider_upload_attempts || 0} · {t("webdav_writeback.advanced.provider_retry_bytes")}{" "}
+                            {bytes(row.provider_retry_bytes || 0)}
                             <br />
                             Ack {time(row.ack_time)} · Durable{" "}
                             {time(row.durable_at)}
