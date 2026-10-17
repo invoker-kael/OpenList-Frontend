@@ -48,6 +48,7 @@ type StateSummary = {
 
 type Summary = {
   enabled: boolean
+  rebuilding: boolean
   workers: number
   receiving: number
   receiving_expected_bytes: number
@@ -184,11 +185,8 @@ type BatchActionResult = {
 }
 
 type RebuildAllResult = {
-  tasks: number
-  history: number
-  receive_fences: number
-  reservations: number
-  provider_operations: number
+  started: boolean
+  rebuilding: boolean
 }
 
 type PagedResponse<T> = {
@@ -1228,15 +1226,20 @@ const WebDAVWriteback = () => {
   }
 
   const rebuildAll = () => {
+    if (summary()?.rebuilding) return
     if (!window.confirm(t("webdav_writeback.rebuild.confirm"))) return
     void run(async () => {
       const result = await post<RebuildAllResult>("/rebuild-all")
       notify.success(
-        `${t("webdav_writeback.rebuild.done")} ${result.tasks || 0} / ${result.history || 0}`,
+        t(
+          result.started
+            ? "webdav_writeback.rebuild.started"
+            : "webdav_writeback.rebuild.already_running",
+        ),
       )
       setSelectedActive([])
       setSelectedHistory([])
-      await Promise.all([loadOverview(), loadActive(), loadHistory()])
+      await loadOverview()
       setLastUpdated(new Date())
     })
   }
@@ -1836,8 +1839,17 @@ const WebDAVWriteback = () => {
           <Text size="sm" color="$neutral10" mb="$2">
             {t("webdav_writeback.rebuild.description")}
           </Text>
-          <Button colorScheme="danger" variant="outline" onClick={rebuildAll}>
-            {t("webdav_writeback.rebuild.button")}
+          <Button
+            colorScheme="danger"
+            variant="outline"
+            disabled={summary()?.rebuilding}
+            onClick={rebuildAll}
+          >
+            {t(
+              summary()?.rebuilding
+                ? "webdav_writeback.rebuild.running"
+                : "webdav_writeback.rebuild.button",
+            )}
           </Button>
         </Box>
       </Show>

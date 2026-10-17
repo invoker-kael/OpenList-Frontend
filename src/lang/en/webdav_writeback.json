@@ -255,9 +255,11 @@
   },
   "rebuild": {
     "title": "Full rebuild / gap check",
-    "description": "Clear all OpenList WebDAV writeback tasks, history, and local task index without deleting any 115 files. On the next Cloud Sync scan, OpenList checks 115 first; any same-name object with matching size and SHA-1 is completed immediately without another upload. Only missing or different content is uploaded.",
+    "description": "Clear OpenList WebDAV writeback tasks, history, and local task index without deleting 115 files. Rebuild runs in the background: current PUTs are allowed to finish, while new writes receive a retryable response so the UI and reverse proxy do not time out. On the next Cloud Sync scan, matching size + SHA-1 content already on 115 completes without another upload.",
     "button": "Clear tasks and rebuild",
-    "confirm": "Clear all WebDAV writeback tasks and history? Files on 115 will not be deleted. Cloud Sync can then rescan and automatically fill only missing content.",
-    "done": "Full rebuild completed, tasks / history cleared:"
+    "confirm": "Start a full rebuild? Files on 115 will not be deleted. The background rebuild waits for current PUTs to finish safely; new Cloud Sync writes will retry later.",
+    "running": "Rebuilding in background…",
+    "started": "Full rebuild started in the background.",
+    "already_running": "A full rebuild is already running."
   }
 }
