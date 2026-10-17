@@ -252,5 +252,12 @@
     "restart_cloudsync": "停用后重新启用 Cloud Sync 任务",
     "none": "无需操作",
     "paused_by_operator": "已由操作员暂停"
+  },
+  "rebuild": {
+    "title": "全量重建 / 查漏补缺",
+    "description": "清空 OpenList 的全部 WebDAV 写回任务、历史和本地任务索引，不删除 115 文件。之后 Cloud Sync 重新扫描；收到 PUT 时 OpenList 会先 Fresh LIST 115，同名文件中只要有 Size + SHA1 完全匹配就直接标记已完成，不再重复上传；只有缺失或内容不同的文件才上传 115。",
+    "button": "清空任务并全量重建",
+    "confirm": "确认清空全部 WebDAV 写回任务和历史记录？115 上的文件不会删除。本地写回任务会重置，Cloud Sync 随后可重新扫描并自动查漏补缺。",
+    "done": "全量重建完成，清理任务 / 历史："
   }
 }

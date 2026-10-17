@@ -252,5 +252,12 @@
     "restart_cloudsync": "Restart Cloud Sync task",
     "none": "No action",
     "paused_by_operator": "Paused by operator"
+  },
+  "rebuild": {
+    "title": "Full rebuild / gap check",
+    "description": "Clear all OpenList WebDAV writeback tasks, history, and local task index without deleting any 115 files. On the next Cloud Sync scan, OpenList checks 115 first; any same-name object with matching size and SHA-1 is completed immediately without another upload. Only missing or different content is uploaded.",
+    "button": "Clear tasks and rebuild",
+    "confirm": "Clear all WebDAV writeback tasks and history? Files on 115 will not be deleted. Cloud Sync can then rescan and automatically fill only missing content.",
+    "done": "Full rebuild completed, tasks / history cleared:"
   }
 }
