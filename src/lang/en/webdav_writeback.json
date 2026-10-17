@@ -165,7 +165,7 @@
     "receiving": "Receiving",
     "queued": "Queued",
     "uploading": "Uploading",
-    "verifying": "Recovery check",
+    "verifying": "Confirming 115",
     "completed": "Completed",
     "deleted": "Deleted",
     "error": "Errors",
@@ -180,7 +180,7 @@
     "recovery_required": "Recovery required"
   },
   "recovery": {
-    "restart_recovery": "Restart recovery",
+    "restart_recovery": "Legacy restart recovery",
     "missing_spool_provider_recovered": "Missing spool recovered from provider",
     "cloudsync_rehydrate_required": "CloudSync rehydrate required"
   },
@@ -235,7 +235,7 @@
     "reupload_uploading": "Re-upload syncing to provider",
     "reupload_verifying": "Re-upload recovery checking",
     "recovered": "Recovered",
-    "automatic_recovery": "Automatic recovery",
+    "automatic_recovery": "Processing",
     "remote_hash_mismatch": "Completed, remote hash differs",
     "completed": "Completed",
     "deleted": "Deleted",

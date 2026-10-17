@@ -165,7 +165,7 @@
     "receiving": "接收中",
     "queued": "已排队",
     "uploading": "上传中",
-    "verifying": "恢复检查",
+    "verifying": "115 确认中",
     "completed": "已完成",
     "deleted": "已删除",
     "error": "错误",
@@ -180,7 +180,7 @@
     "recovery_required": "需要恢复"
   },
   "recovery": {
-    "restart_recovery": "重启恢复",
+    "restart_recovery": "历史重启恢复",
     "missing_spool_provider_recovered": "本地缓存缺失，已从远端恢复",
     "cloudsync_rehydrate_required": "需要 Cloud Sync 重新上传"
   },
@@ -235,7 +235,7 @@
     "reupload_uploading": "重传文件正在写入远端",
     "reupload_verifying": "重传异常恢复检查中",
     "recovered": "已恢复",
-    "automatic_recovery": "自动恢复中",
+    "automatic_recovery": "处理中",
     "remote_hash_mismatch": "已完成，远端 Hash 差异",
     "completed": "已完成",
     "deleted": "已删除",

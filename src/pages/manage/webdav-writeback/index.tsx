@@ -62,10 +62,6 @@ type Summary = {
   disk_free_bytes: number
   disk_error?: string
   missing_spool: number
-  restart_recovery: number
-  waiting_provider_verification: number
-  needs_cloudsync_rehydrate: number
-  automatic_recovery: number
   remote_hash_mismatch: number
   paused: number
   errors: number
