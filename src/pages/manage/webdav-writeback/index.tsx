@@ -2101,11 +2101,18 @@ const WebDAVWriteback = () => {
                             Generation {row.generation} · Retry{" "}
                             {row.retry_count}
                             <br />
-                            {t("webdav_writeback.advanced.client_duplicate_puts")}{" "}
-                            {row.client_duplicate_puts || 0} · {t("webdav_writeback.advanced.provider_upload_attempts")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.client_duplicate_puts",
+                            )}{" "}
+                            {row.client_duplicate_puts || 0} ·{" "}
+                            {t(
+                              "webdav_writeback.advanced.provider_upload_attempts",
+                            )}{" "}
                             {row.provider_upload_attempts || 0}
                             <br />
-                            {t("webdav_writeback.advanced.provider_retry_bytes")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.provider_retry_bytes",
+                            )}{" "}
                             {bytes(row.provider_retry_bytes || 0)}
                             <br />
                             Canonical {row.client_state || "-"} · RemoteVerified{" "}
@@ -2622,9 +2629,17 @@ const WebDAVWriteback = () => {
                             )}{" "}
                             {duration(row.started_at, row.completed_at)}
                             <br />
-                            {t("webdav_writeback.advanced.client_duplicate_puts")}{" "}
-                            {row.client_duplicate_puts || 0} · {t("webdav_writeback.advanced.provider_upload_attempts")}{" "}
-                            {row.provider_upload_attempts || 0} · {t("webdav_writeback.advanced.provider_retry_bytes")}{" "}
+                            {t(
+                              "webdav_writeback.advanced.client_duplicate_puts",
+                            )}{" "}
+                            {row.client_duplicate_puts || 0} ·{" "}
+                            {t(
+                              "webdav_writeback.advanced.provider_upload_attempts",
+                            )}{" "}
+                            {row.provider_upload_attempts || 0} ·{" "}
+                            {t(
+                              "webdav_writeback.advanced.provider_retry_bytes",
+                            )}{" "}
                             {bytes(row.provider_retry_bytes || 0)}
                             <br />
                             Ack {time(row.ack_time)} · Durable{" "}
