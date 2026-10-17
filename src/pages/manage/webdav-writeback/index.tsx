@@ -2108,9 +2108,8 @@ const WebDAVWriteback = () => {
                             {t(
                               "webdav_writeback.advanced.client_duplicate_bytes",
                             )}{" "}
-                            {bytes(
-                              (row.client_duplicate_puts || 0) * row.size,
-                            )} ·{" "}
+                            {bytes((row.client_duplicate_puts || 0) * row.size)}{" "}
+                            ·{" "}
                             {t(
                               "webdav_writeback.advanced.provider_upload_attempts",
                             )}{" "}
@@ -2642,9 +2641,8 @@ const WebDAVWriteback = () => {
                             {t(
                               "webdav_writeback.advanced.client_duplicate_bytes",
                             )}{" "}
-                            {bytes(
-                              (row.client_duplicate_puts || 0) * row.size,
-                            )} ·{" "}
+                            {bytes((row.client_duplicate_puts || 0) * row.size)}{" "}
+                            ·{" "}
                             {t(
                               "webdav_writeback.advanced.provider_upload_attempts",
                             )}{" "}
