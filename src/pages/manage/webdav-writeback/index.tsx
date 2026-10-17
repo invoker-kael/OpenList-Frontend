@@ -1573,12 +1573,8 @@ const WebDAVWriteback = () => {
 
   const historyCurrentStateChoices = (): Choice[] => [
     { value: "all", label: t("webdav_writeback.common.all_current_states") },
-    { value: "queued", label: t("webdav_writeback.state.queued") },
-    { value: "uploading", label: t("webdav_writeback.state.uploading") },
-    { value: "verifying", label: t("webdav_writeback.state.verifying") },
     { value: "completed", label: t("webdav_writeback.state.completed") },
     { value: "failed", label: t("webdav_writeback.state.failed") },
-    { value: "deleted", label: t("webdav_writeback.state.deleted") },
   ]
 
   const resetHistoryFilters = () => {
@@ -2069,9 +2065,8 @@ const WebDAVWriteback = () => {
                             {t("webdav_writeback.common.advanced")}
                           </summary>
                           <Text size="xs" color="$neutral10">
-                            Generation {row.generation} · Internal{" "}
-                            {row.provider_state || "-"} · Retry{" "}
-                            {row.retry_count} · Confirm {row.verify_count}
+                            Generation {row.generation} · Retry{" "}
+                            {row.retry_count}
                             <br />
                             Canonical {row.client_state || "-"} · RemoteVerified{" "}
                             {time(row.remote_verified_at)}
@@ -2574,9 +2569,6 @@ const WebDAVWriteback = () => {
                               ? translateValue("status", row.resolution_reason)
                               : "-"}
                             <br />
-                            Retry {row.retry_count} · Recovery checks{" "}
-                            {row.verify_count}
-                            <br />
                             {t(
                               "webdav_writeback.advanced.provider_upload_duration",
                             )}{" "}
@@ -2595,16 +2587,6 @@ const WebDAVWriteback = () => {
                             <br />
                             {t("webdav_writeback.advanced.final_event")}{" "}
                             {time(row.updated_at)}
-                            <br />
-                            {t(
-                              "webdav_writeback.advanced.current_recovery",
-                            )}{" "}
-                            {row.current_recovery_state
-                              ? translateValue(
-                                  "recovery",
-                                  row.current_recovery_state,
-                                )
-                              : "-"}
                             <br />
                             PayloadSHA1 {row.payload_sha1 || "-"}
                             <br />
