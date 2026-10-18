@@ -1917,7 +1917,8 @@ const WebDAVWriteback = () => {
               )}
             </Button>
             <Text size="sm">
-              {summary()?.remote_index?.refresh?.completed || 0} / {summary()?.remote_index?.refresh?.total || 0}
+              {summary()?.remote_index?.refresh?.completed || 0} /{" "}
+              {summary()?.remote_index?.refresh?.total || 0}
               {` · ${t("webdav_writeback.remote_index.failed")} ${summary()?.remote_index?.refresh?.failed || 0}`}
             </Text>
           </HStack>
