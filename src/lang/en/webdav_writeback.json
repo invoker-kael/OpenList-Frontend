@@ -50,6 +50,30 @@
     "completed": "Completed",
     "failed": "Failed"
   },
+  "system": {
+    "runtime": "OpenList runtime",
+    "cpu_cores": "CPU cores",
+    "goroutines": "goroutines",
+    "memory": "Go memory in use",
+    "runtime_memory": "runtime allocated",
+    "fresh_concurrency": "Fresh LIST active / limit",
+    "configured_concurrency": "Configured limit",
+    "spool_disk": "Spool filesystem used",
+    "spool_backlog": "Writeback spool backlog",
+    "completed_cache": "Completed cache",
+    "free": "free"
+  },
+  "remote_index": {
+    "title": "Remote directory cache",
+    "description": "Refreshes only parent directories already tracked by Writeback. Results are stored in MySQL for exact same-name, size and SHA-1 comparisons. The configured concurrency is an upper bound; every 115 API request follows the storage backend's LimitRate.",
+    "refresh": "Refresh remote cache",
+    "running": "Refreshing remote cache…",
+    "started": "Remote cache refresh started",
+    "already_running": "Remote cache refresh is already running",
+    "unavailable": "Remote cache refresh could not start during rebuild",
+    "last_success": "Last successful refresh:",
+    "failed": "failed"
+  },
   "cache": {
     "title": "Completed cache maintenance",
     "description": "Releases completed .data spool files after a successful provider upload or an exact fresh-list match. Canonical state, History, active tasks and provider objects are preserved.",
@@ -62,7 +86,7 @@
     "confirm_release": "Release completed spool cache only? Canonical state, History, active tasks and provider data are preserved."
   },
   "active": {
-    "description": "Cloud Sync PUTs are durably spooled and ACKed first. A fresh 115 listing skips an upload when any same-name file has the same size and SHA-1. Otherwise OpenList uploads the spool and marks it completed on provider API success. Temporary errors keep the spool and retry in Processing; retries first check whether 115 already has the exact content.",
+    "description": "Cloud Sync PUTs are durably spooled and ACKed first. A recent MySQL remote-index match is checked before Fresh LIST; either can skip the upload when any same-name file has the same size and SHA-1. Otherwise OpenList uploads the spool. Temporary errors keep the spool and retry in Processing.",
     "empty": "No active writeback work.",
     "reupload_now": "Re-upload to provider now",
     "reupload_now_scheduled": "Provider re-upload scheduled:",
@@ -177,7 +201,7 @@
   },
   "settings": {
     "title": "Writeback settings",
-    "description": "Cloud Sync PUTs are durably spooled and ACKed first. A fresh 115 listing skips an upload when any same-name file has the same size and SHA-1. Otherwise provider API success completes the task. Temporary errors keep the spool in Processing and retry with backoff; each retry checks 115 for an upload that may have succeeded before its response was lost.",
+    "description": "Cloud Sync PUTs are durably spooled and ACKed first. A recent MySQL remote-index snapshot can skip an upload on an exact same-name, size and SHA-1 match; otherwise OpenList uses a fresh 115 listing. Provider API success completes the task. Temporary errors keep the spool in Processing and retry with backoff.",
     "enabled": "Enabled",
     "enable_writeback": "Enable durable WebDAV writeback",
     "read_only": "Read only",
@@ -187,17 +211,19 @@
     "workers": "Workers",
     "upload_workers": "Upload workers",
     "large_upload_workers": "Large upload workers",
-    "provider_probe_workers": "115 listing workers (ProviderProbeWorkers)",
+    "provider_probe_workers": "Fresh LIST concurrency (ProviderProbeWorkers)",
+    "provider_probe_workers_hint": "Caps simultaneous directory probes. The selected storage backend's LimitRate controls the actual 115 request pace. A restart is required after changing this setting.",
     "completed_cache_ttl_minutes": "Completed cache TTL minutes",
-    "completed_remote_probe_seconds": "Legacy completed remote probe seconds",
+    "completed_remote_probe_seconds": "Completed remote check interval (seconds)",
+    "provider_snapshot_ttl_seconds": "Remote directory cache TTL (seconds)",
     "cloudsync_settle_millis": "CloudSync settle milliseconds",
     "cloudsync_placeholder_millis": "CloudSync placeholder milliseconds",
     "retry_initial_seconds": "Initial retry seconds",
     "retry_max_seconds": "Maximum retry delay seconds",
     "verify_interval_seconds": "Remote recovery check interval seconds",
-    "verify_attempts": "Confirmed missing checks before source resend",
     "unlimited_hint": "0 = unlimited",
     "completed_cache_ttl_hint": "-1 = disable automatic completed-cache release",
+    "provider_snapshot_ttl_hint": "-1 = disable cached provider listings and Writeback remote index matches",
     "saved_restart": "Saved. Restart required for:",
     "saved_active": "Saved and active.",
     "saved_notice": "WebDAV Writeback settings saved"
@@ -239,7 +265,7 @@
   },
   "rebuild": {
     "title": "Full rebuild / gap check",
-    "description": "Rebuild runs in the background. Current PUTs finish first; GET, HEAD, and PROPFIND remain available, while new writes get 503 with Retry-After. OpenList clears its writeback records and local .part/.data spool files, including orphans. It never deletes 115 files. A fresh 115 listing that finds any same-name file with matching size and SHA-1 completes without another upload.",
+    "description": "Rebuild runs in the background. Current PUTs finish first; GET, HEAD, and PROPFIND remain available, while new writes get 503 with Retry-After. OpenList clears its writeback records, cached remote index and local .part/.data spool files, including orphans. It never deletes 115 files. A fresh 115 listing that finds any same-name file with matching size and SHA-1 completes without another upload.",
     "button": "Clear tasks and rebuild",
     "confirm": "Start a full rebuild? OpenList will clear its writeback records and local spool files after current PUTs finish. Files on 115 will not be deleted; new Cloud Sync writes will retry later.",
     "running": "Rebuilding in background…",

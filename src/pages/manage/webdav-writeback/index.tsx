@@ -49,9 +49,31 @@ type StateSummary = {
 type Summary = {
   rebuilding: boolean
   workers: number
+  provider_probe_workers: number
+  provider_probe_in_flight: number
+  provider_probe_capacity: number
+  go_version: string
+  num_cpu: number
+  goroutines: number
+  memory_alloc_bytes: number
+  memory_sys_bytes: number
+  remote_index: {
+    directories: number
+    objects: number
+    last_at?: string
+    refresh: {
+      running: boolean
+      total: number
+      completed: number
+      failed: number
+      started_at?: string
+      finished_at?: string
+    }
+  }
   receiving: number
   receiving_expected_bytes: number
   receiving_reservation_bytes: number
+  backlog_bytes: number
   completed_cache_bytes: number
   max_pending_spool_bytes: number
   reserve_free_space_bytes: number
@@ -157,12 +179,12 @@ type Settings = {
   provider_probe_workers: number
   completed_cache_ttl_minutes: number
   completed_remote_probe_seconds: number
+  provider_snapshot_ttl_seconds: number
   cloudsync_settle_millis: number
   cloudsync_placeholder_millis: number
   retry_initial_seconds: number
   retry_max_seconds: number
   verify_interval_seconds: number
-  verify_attempts: number
   spool_dir: string
   restart_required_fields?: string[]
 }
@@ -191,6 +213,11 @@ type BatchActionResult = {
 type RebuildAllResult = {
   started: boolean
   rebuilding: boolean
+}
+
+type RemoteIndexRefreshResult = {
+  started: boolean
+  running: boolean
 }
 
 type PagedResponse<T> = {
@@ -1229,6 +1256,24 @@ const WebDAVWriteback = () => {
     })
   }
 
+  const refreshRemoteIndex = () =>
+    run(async () => {
+      const result = await post<RemoteIndexRefreshResult>(
+        "/remote-index/refresh",
+      )
+      notify.success(
+        t(
+          result.started
+            ? "webdav_writeback.remote_index.started"
+            : result.running
+              ? "webdav_writeback.remote_index.already_running"
+              : "webdav_writeback.remote_index.unavailable",
+        ),
+      )
+      await loadOverview()
+      setLastUpdated(new Date())
+    })
+
   const rebuildAll = () => {
     if (summary()?.rebuilding) return
     if (!window.confirm(t("webdav_writeback.rebuild.confirm"))) return
@@ -1354,6 +1399,18 @@ const WebDAVWriteback = () => {
       key: "provider_probe_workers",
       label: "webdav_writeback.settings.provider_probe_workers",
       min: 1,
+      hint: "webdav_writeback.settings.provider_probe_workers_hint",
+    },
+    {
+      key: "completed_remote_probe_seconds",
+      label: "webdav_writeback.settings.completed_remote_probe_seconds",
+      min: 0,
+    },
+    {
+      key: "provider_snapshot_ttl_seconds",
+      label: "webdav_writeback.settings.provider_snapshot_ttl_seconds",
+      min: -1,
+      hint: "webdav_writeback.settings.provider_snapshot_ttl_hint",
     },
     {
       key: "completed_cache_ttl_minutes",
@@ -1781,7 +1838,90 @@ const WebDAVWriteback = () => {
               stateCount("waiting_repair")
             }
           />
+          <StatCard
+            label={t("webdav_writeback.system.runtime")}
+            value={summary()?.go_version || "-"}
+            hint={`${summary()?.num_cpu || 0} ${t(
+              "webdav_writeback.system.cpu_cores",
+            )} · ${summary()?.goroutines || 0} ${t(
+              "webdav_writeback.system.goroutines",
+            )}`}
+          />
+          <StatCard
+            label={t("webdav_writeback.system.memory")}
+            value={bytes(summary()?.memory_alloc_bytes || 0)}
+            hint={`${t("webdav_writeback.system.runtime_memory")} ${bytes(
+              summary()?.memory_sys_bytes || 0,
+            )}`}
+          />
+          <StatCard
+            label={t("webdav_writeback.system.fresh_concurrency")}
+            value={`${summary()?.provider_probe_in_flight || 0} / ${
+              summary()?.provider_probe_capacity || 0
+            }`}
+            hint={`${t("webdav_writeback.system.configured_concurrency")} ${
+              summary()?.provider_probe_workers || 0
+            }`}
+          />
+          <StatCard
+            label={t("webdav_writeback.system.spool_disk")}
+            value={bytes(summary()?.disk_used_bytes || 0)}
+            hint={`${bytes(summary()?.disk_free_bytes || 0)} ${t(
+              "webdav_writeback.system.free",
+            )} / ${bytes(summary()?.disk_total_bytes || 0)}`}
+          />
+          <StatCard
+            label={t("webdav_writeback.remote_index.title")}
+            value={`${summary()?.remote_index?.directories || 0} / ${
+              summary()?.remote_index?.objects || 0
+            }`}
+            hint={`${t("webdav_writeback.remote_index.last_success")} ${time(
+              summary()?.remote_index?.last_at,
+            )}`}
+          />
+          <StatCard
+            label={t("webdav_writeback.system.spool_backlog")}
+            value={bytes(summary()?.backlog_bytes || 0)}
+            hint={`${t("webdav_writeback.system.completed_cache")} ${bytes(
+              summary()?.completed_cache_bytes || 0,
+            )}`}
+          />
         </SimpleGrid>
+
+        <Box
+          w="$full"
+          borderWidth="1px"
+          borderColor="$neutral6"
+          rounded="$lg"
+          p="$3"
+        >
+          <Heading size="base" mb="$1">
+            {t("webdav_writeback.remote_index.title")}
+          </Heading>
+          <Text size="sm" color="$neutral10" mb="$2">
+            {t("webdav_writeback.remote_index.description")}
+          </Text>
+          <HStack spacing="$2" wrap="wrap">
+            <Button
+              variant="outline"
+              disabled={
+                summary()?.remote_index?.refresh?.running ||
+                summary()?.rebuilding
+              }
+              onClick={refreshRemoteIndex}
+            >
+              {t(
+                summary()?.remote_index?.refresh?.running
+                  ? "webdav_writeback.remote_index.running"
+                  : "webdav_writeback.remote_index.refresh",
+              )}
+            </Button>
+            <Text size="sm">
+              {summary()?.remote_index?.refresh?.completed || 0} / {summary()?.remote_index?.refresh?.total || 0}
+              {` · ${t("webdav_writeback.remote_index.failed")} ${summary()?.remote_index?.refresh?.failed || 0}`}
+            </Text>
+          </HStack>
+        </Box>
 
         <Box
           w="$full"
