@@ -195,12 +195,14 @@
     "retry_initial_seconds": "初始重试秒数",
     "retry_max_seconds": "最大重试间隔秒数",
     "verify_interval_seconds": "远端恢复检查间隔秒数",
-    "verify_attempts": "确认缺失后触发源端重传的次数",
     "unlimited_hint": "0 = 不限制",
     "completed_cache_ttl_hint": "-1 = 禁用自动释放已完成缓存",
     "saved_restart": "已保存，需要重启才能应用：",
     "saved_active": "已保存并立即生效。",
-    "saved_notice": "WebDAV 写回设置已保存"
+    "saved_notice": "WebDAV 写回设置已保存",
+    "provider_probe_workers_hint": "限制同时探测的目录数。实际 115 请求频率由所选存储后端的 LimitRate 控制。修改此设置后需要重启。",
+    "provider_snapshot_ttl_seconds": "远端目录缓存 TTL（秒）",
+    "provider_snapshot_ttl_hint": "-1 = 禁用服务商目录缓存和写回远端索引匹配"
   },
   "cloudsync_status": {
     "receiving": "接收中",
@@ -245,5 +247,29 @@
     "running": "后台重建中…",
     "started": "全量重建已在后台启动。",
     "already_running": "全量重建已经在运行。"
+  },
+  "system": {
+    "runtime": "OpenList 运行状态",
+    "cpu_cores": "CPU 核心数",
+    "goroutines": "goroutine 数",
+    "memory": "Go 内存使用量",
+    "runtime_memory": "运行时分配内存",
+    "fresh_concurrency": "Fresh LIST 并发 / 上限",
+    "configured_concurrency": "已配置上限",
+    "spool_disk": "Spool 文件系统已用空间",
+    "spool_backlog": "写回 Spool 待处理量",
+    "completed_cache": "已完成缓存",
+    "free": "可用"
+  },
+  "remote_index": {
+    "title": "远端目录缓存",
+    "description": "仅刷新写回记录涉及的父目录。结果保存在 MySQL，用于按名称、大小和 SHA-1 精确比对。配置的并发数仅为上限；每个 115 API 请求仍遵守存储后端的 LimitRate。",
+    "refresh": "刷新远端缓存",
+    "running": "正在刷新远端缓存…",
+    "started": "远端缓存刷新已启动",
+    "already_running": "远端缓存刷新已在运行",
+    "unavailable": "重建期间无法启动远端缓存刷新",
+    "last_success": "上次成功刷新：",
+    "failed": "失败"
   }
 }
