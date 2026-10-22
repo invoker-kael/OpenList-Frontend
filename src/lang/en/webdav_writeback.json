@@ -60,7 +60,7 @@
     "configured_concurrency": "Configured limit",
     "spool_disk": "Spool filesystem used",
     "spool_backlog": "Writeback spool backlog",
-    "completed_cache": "Completed cache",
+    "completed_cache": "Completed spool leftovers",
     "free": "free"
   },
   "remote_index": {
@@ -213,7 +213,6 @@
     "large_upload_workers": "Large upload workers",
     "provider_probe_workers": "Fresh LIST concurrency (ProviderProbeWorkers)",
     "provider_probe_workers_hint": "Caps simultaneous directory probes. The selected storage backend's LimitRate controls the actual 115 request pace. A restart is required after changing this setting.",
-    "completed_cache_ttl_minutes": "Completed cache TTL minutes",
     "completed_remote_probe_seconds": "Completed remote check interval (seconds)",
     "provider_snapshot_ttl_seconds": "Remote directory cache TTL (seconds)",
     "cloudsync_settle_millis": "CloudSync settle milliseconds",
@@ -222,7 +221,6 @@
     "retry_max_seconds": "Maximum retry delay seconds",
     "verify_interval_seconds": "Remote recovery check interval seconds",
     "unlimited_hint": "0 = unlimited",
-    "completed_cache_ttl_hint": "-1 = disable automatic completed-cache release",
     "provider_snapshot_ttl_hint": "-1 = disable cached provider listings and Writeback remote index matches",
     "saved_restart": "Saved. Restart required for:",
     "saved_active": "Saved and active.",

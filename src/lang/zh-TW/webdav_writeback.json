@@ -188,7 +188,6 @@
     "upload_workers": "上傳執行緒 (UploadWorkers)",
     "large_upload_workers": "大檔案上傳執行緒 (LargeUploadWorkers)",
     "provider_probe_workers": "115 LIST 執行緒 (ProviderProbeWorkers)",
-    "completed_cache_ttl_minutes": "已完成快取保留分鐘數",
     "completed_remote_probe_seconds": "相容保留：已完成物件遠端探測秒數",
     "cloudsync_settle_millis": "Cloud Sync 收斂等待毫秒",
     "cloudsync_placeholder_millis": "Cloud Sync 佔位等待毫秒",
@@ -196,7 +195,6 @@
     "retry_max_seconds": "最大重試間隔秒數",
     "verify_interval_seconds": "遠端恢復檢查間隔秒數",
     "unlimited_hint": "0 = 不限制",
-    "completed_cache_ttl_hint": "-1 = 停用自動釋放已完成快取",
     "saved_restart": "已儲存，需要重啟才能應用：",
     "saved_active": "已儲存並立即生效。",
     "saved_notice": "WebDAV 寫回設定已儲存",
@@ -258,7 +256,7 @@
     "configured_concurrency": "已配置上限",
     "spool_disk": "Spool 檔案系統已用空間",
     "spool_backlog": "寫回 Spool 待處理量",
-    "completed_cache": "已完成快取",
+    "completed_cache": "已完成但未釋放的快取",
     "free": "可用"
   },
   "remote_index": {

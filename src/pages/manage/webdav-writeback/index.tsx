@@ -77,7 +77,6 @@ type Summary = {
   completed_cache_bytes: number
   max_pending_spool_bytes: number
   reserve_free_space_bytes: number
-  completed_cache_ttl_minutes: number
   disk_total_bytes: number
   disk_used_bytes: number
   disk_free_bytes: number
@@ -177,7 +176,6 @@ type Settings = {
   upload_workers: number
   large_upload_workers: number
   provider_probe_workers: number
-  completed_cache_ttl_minutes: number
   completed_remote_probe_seconds: number
   provider_snapshot_ttl_seconds: number
   cloudsync_settle_millis: number
@@ -1411,12 +1409,6 @@ const WebDAVWriteback = () => {
       label: "webdav_writeback.settings.provider_snapshot_ttl_seconds",
       min: -1,
       hint: "webdav_writeback.settings.provider_snapshot_ttl_hint",
-    },
-    {
-      key: "completed_cache_ttl_minutes",
-      label: "webdav_writeback.settings.completed_cache_ttl_minutes",
-      min: -1,
-      hint: "webdav_writeback.settings.completed_cache_ttl_hint",
     },
     {
       key: "cloudsync_settle_millis",
