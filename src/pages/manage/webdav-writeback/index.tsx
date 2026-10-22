@@ -853,9 +853,7 @@ const WebDAVWriteback = () => {
 
   const confirmDangerous = (message: string, secondMessage?: string) =>
     window.confirm(message) &&
-    window.confirm(
-      secondMessage || t("webdav_writeback.common.confirm_again"),
-    )
+    window.confirm(secondMessage || t("webdav_writeback.common.confirm_again"))
 
   const run = async (fn: () => Promise<void>) => {
     try {
@@ -1054,7 +1052,8 @@ const WebDAVWriteback = () => {
   }
 
   const pauseAll = () => {
-    if (!confirmDangerous(t("webdav_writeback.active.confirm_pause_all"))) return
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_pause_all")))
+      return
     void run(() => batchAction("pause", [], true))
   }
 
@@ -1065,7 +1064,8 @@ const WebDAVWriteback = () => {
   }
 
   const cancelAll = () => {
-    if (!confirmDangerous(t("webdav_writeback.active.confirm_cancel_all"))) return
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_cancel_all")))
+      return
     void run(() => batchAction("cancel", [], true))
   }
 
