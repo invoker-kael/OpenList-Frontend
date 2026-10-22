@@ -42,24 +42,14 @@
     "completed": "已完成",
     "advanced_filters": "高级筛选",
     "sort_asc": "升序",
-    "sort_desc": "降序"
+    "sort_desc": "降序",
+    "confirm_again": "请再次确认，继续执行这项可能影响任务或远端请求的操作。"
   },
   "overview": {
     "receiving": "接收中",
     "processing": "处理中",
     "completed": "已完成",
     "failed": "失败"
-  },
-  "cache": {
-    "title": "已完成缓存维护",
-    "description": "仅在 115 上传成功或 fresh LIST 找到完全匹配内容后，释放已完成的 .data 缓存。不会删除 Canonical 状态、历史记录、活动任务或远端对象。",
-    "preview": "预览可清理缓存",
-    "release": "释放已完成缓存",
-    "eligible": "可清理",
-    "released": "已释放",
-    "files": "个文件",
-    "preview_capped": "预览已截断",
-    "confirm_release": "仅释放已完成任务的本地缓存？Canonical 状态、历史记录、活动任务和远端数据都会保留。"
   },
   "active": {
     "description": "Cloud Sync PUT 先持久写入本地 spool 并 ACK。Fresh LIST 中任意同名文件的 Size + SHA1 匹配时跳过上传；否则上传 spool，115 API 成功即完成。临时错误保留 spool 并在处理中退避重试；重试前会先检查 115 是否已收到上次上传。",
@@ -84,7 +74,9 @@
     "confirm_cancel_one": "确认放弃当前任务并标记失败？本地任务缓存会被清理，WebDAV 将该路径返回为不存在，让 Cloud Sync 自动重新上传。",
     "confirm_cancel_selected": "确认将选中任务标记失败并交给 Cloud Sync 自动重传，数量：",
     "confirm_cancel_all": "确认将全部活动文件任务标记失败？这些路径会对 Cloud Sync 显示为不存在，并由 Cloud Sync 自动重新上传。",
-    "failed_auto_reupload": "确认失败，等待 Cloud Sync 自动重传"
+    "failed_auto_reupload": "确认失败，等待 Cloud Sync 自动重传",
+    "confirm_start_all": "确认开始全部暂停中的写回任务？这可能同时触发大量远端上传和 API 请求。",
+    "confirm_reupload_one": "确认从本地 spool 重新安排此任务？这可能再次完整上传文件。"
   },
   "history": {
     "rows": "历史记录数",
@@ -200,7 +192,8 @@
     "saved_notice": "WebDAV 写回设置已保存",
     "provider_probe_workers_hint": "限制同时探测的目录数。实际 115 请求频率由所选存储后端的 LimitRate 控制。修改此设置后需要重启。",
     "provider_snapshot_ttl_seconds": "远端目录缓存 TTL（秒）",
-    "provider_snapshot_ttl_hint": "-1 = 禁用服务商目录缓存和写回远端索引匹配"
+    "provider_snapshot_ttl_hint": "-1 = 禁用服务商目录缓存和写回远端索引匹配",
+    "confirm_disable": "确认关闭 WebDAV 写回？这可能导致此服务无法处理新的 Cloud Sync 上传。"
   },
   "cloudsync_status": {
     "receiving": "接收中",
@@ -268,6 +261,8 @@
     "already_running": "远端缓存刷新已在运行",
     "unavailable": "重建期间无法启动远端缓存刷新",
     "last_success": "上次成功刷新：",
-    "failed": "失败"
+    "failed": "失败",
+    "confirm_refresh": "确认刷新 115 中所有已跟踪父目录？这会发起 Fresh LIST 请求，可能产生较多 API 流量。",
+    "confirm_refresh_again": "再次确认开始远端刷新？这会向 115 发出请求，可能触发其频率限制。"
   }
 }

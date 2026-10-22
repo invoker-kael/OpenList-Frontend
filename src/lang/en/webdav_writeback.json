@@ -42,7 +42,8 @@
     "completed": "Completed",
     "advanced_filters": "Advanced filters",
     "sort_asc": "Sort ascending",
-    "sort_desc": "Sort descending"
+    "sort_desc": "Sort descending",
+    "confirm_again": "Confirm again to proceed with this potentially disruptive operation."
   },
   "overview": {
     "receiving": "Receiving",
@@ -72,18 +73,9 @@
     "already_running": "Remote cache refresh is already running",
     "unavailable": "Remote cache refresh could not start during rebuild",
     "last_success": "Last successful refresh:",
-    "failed": "failed"
-  },
-  "cache": {
-    "title": "Completed cache maintenance",
-    "description": "Releases completed .data spool files after a successful provider upload or an exact fresh-list match. Canonical state, History, active tasks and provider objects are preserved.",
-    "preview": "Preview cleanup",
-    "release": "Release completed cache",
-    "eligible": "Eligible",
-    "released": "Released",
-    "files": "files",
-    "preview_capped": "preview capped",
-    "confirm_release": "Release completed spool cache only? Canonical state, History, active tasks and provider data are preserved."
+    "failed": "failed",
+    "confirm_refresh": "Refresh all tracked parent directories on 115 now? This sends Fresh LIST requests and may create significant API traffic.",
+    "confirm_refresh_again": "Start the remote refresh? It will send requests to 115 and may trigger its rate limits."
   },
   "active": {
     "description": "Cloud Sync PUTs are durably spooled and ACKed first. A recent MySQL remote-index match is checked before Fresh LIST; either can skip the upload when any same-name file has the same size and SHA-1. Otherwise OpenList uploads the spool. Temporary errors keep the spool and retry in Processing.",
@@ -108,7 +100,9 @@
     "confirm_cancel_one": "Fail this task and abandon the current local payload? WebDAV will expose the path as missing so Cloud Sync can automatically upload a fresh generation.",
     "confirm_cancel_selected": "Fail the selected tasks and return them to Cloud Sync. Count:",
     "confirm_cancel_all": "Fail all active file tasks? Their WebDAV paths will be exposed as missing so Cloud Sync can automatically upload fresh generations.",
-    "failed_auto_reupload": "Confirmation failed; waiting for automatic Cloud Sync re-upload"
+    "failed_auto_reupload": "Confirmation failed; waiting for automatic Cloud Sync re-upload",
+    "confirm_start_all": "Start every paused writeback task? This may trigger many provider uploads and API requests.",
+    "confirm_reupload_one": "Schedule a re-upload of this task from the local spool? This may upload the full file again."
   },
   "history": {
     "rows": "History rows",
@@ -224,7 +218,8 @@
     "provider_snapshot_ttl_hint": "-1 = disable cached provider listings and Writeback remote index matches",
     "saved_restart": "Saved. Restart required for:",
     "saved_active": "Saved and active.",
-    "saved_notice": "WebDAV Writeback settings saved"
+    "saved_notice": "WebDAV Writeback settings saved",
+    "confirm_disable": "Disable WebDAV writeback? This may prevent new Cloud Sync uploads from being handled by this service."
   },
   "cloudsync_status": {
     "receiving": "Receiving",

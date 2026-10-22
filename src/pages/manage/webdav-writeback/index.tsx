@@ -187,14 +187,6 @@ type Settings = {
   restart_required_fields?: string[]
 }
 
-type CacheCleanup = {
-  eligible: number
-  eligible_bytes: number
-  released: number
-  released_bytes: number
-  truncated?: boolean
-}
-
 type HistoryCleanup = {
   deleted: number
 }
@@ -671,12 +663,13 @@ const WebDAVWriteback = () => {
   const [activeRows, setActiveRows] = createSignal<ActiveRow[]>([])
   const [historyRows, setHistoryRows] = createSignal<HistoryRow[]>([])
   const [settings, setSettings] = createSignal<Settings>()
+  const [savedWritebackEnabled, setSavedWritebackEnabled] =
+    createSignal<boolean>()
   const [error, setError] = createSignal("")
   const [lastUpdated, setLastUpdated] = createSignal<Date>()
   const [refreshing, setRefreshing] = createSignal(false)
   const [autoRefreshEnabled, setAutoRefreshEnabled] = createSignal(true)
   const [autoRefreshSeconds, setAutoRefreshSeconds] = createSignal("3")
-  const [cacheStatus, setCacheStatus] = createSignal("")
   const [historyStatus, setHistoryStatus] = createSignal("")
   const [settingsStatus, setSettingsStatus] = createSignal("")
 
@@ -858,6 +851,12 @@ const WebDAVWriteback = () => {
     return undefined
   }
 
+  const confirmDangerous = (message: string, secondMessage?: string) =>
+    window.confirm(message) &&
+    window.confirm(
+      secondMessage || t("webdav_writeback.common.confirm_again"),
+    )
+
   const run = async (fn: () => Promise<void>) => {
     try {
       setError("")
@@ -944,6 +943,8 @@ const WebDAVWriteback = () => {
 
   const reuploadRow = (row: ActiveRow) => {
     if (!reuploadEligible(row)) return
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_reupload_one")))
+      return
     void run(() => reuploadNow([Number(row.id)]))
   }
 
@@ -1020,7 +1021,7 @@ const WebDAVWriteback = () => {
     const ids = selectedIDs(reuploadEligible)
     if (!ids.length) return
     if (
-      !window.confirm(
+      !confirmDangerous(
         `${t("webdav_writeback.active.confirm_batch_reupload")} ${ids.length}`,
       )
     )
@@ -1035,7 +1036,7 @@ const WebDAVWriteback = () => {
     const ids = selectedIDs(resettable)
     if (!ids.length) return
     if (
-      !window.confirm(
+      !confirmDangerous(
         `${t("webdav_writeback.active.confirm_cancel_selected")} ${ids.length}`,
       )
     )
@@ -1046,21 +1047,25 @@ const WebDAVWriteback = () => {
     })
   }
 
-  const startAll = () => void run(() => batchAction("resume", [], true))
+  const startAll = () => {
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_start_all")))
+      return
+    void run(() => batchAction("resume", [], true))
+  }
 
   const pauseAll = () => {
-    if (!window.confirm(t("webdav_writeback.active.confirm_pause_all"))) return
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_pause_all"))) return
     void run(() => batchAction("pause", [], true))
   }
 
   const reuploadAll = () => {
-    if (!window.confirm(t("webdav_writeback.active.confirm_reupload_all")))
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_reupload_all")))
       return
     void run(() => batchAction("reupload", [], true))
   }
 
   const cancelAll = () => {
-    if (!window.confirm(t("webdav_writeback.active.confirm_cancel_all"))) return
+    if (!confirmDangerous(t("webdav_writeback.active.confirm_cancel_all"))) return
     void run(() => batchAction("cancel", [], true))
   }
 
@@ -1106,7 +1111,9 @@ const WebDAVWriteback = () => {
   }
 
   const loadSettings = async () => {
-    setSettings(await get<Settings>("/settings"))
+    const loaded = await get<Settings>("/settings")
+    setSettings(loaded)
+    setSavedWritebackEnabled(loaded.enabled)
   }
 
   const refreshVisible = async () => {
@@ -1226,36 +1233,15 @@ const WebDAVWriteback = () => {
     })
   })
 
-  const previewCache = () =>
-    run(async () => {
-      const result = await get<CacheCleanup>("/cleanup/preview")
-      setCacheStatus(
-        `${t("webdav_writeback.cache.eligible")} ${result.eligible || 0} ${t(
-          "webdav_writeback.cache.files",
-        )} / ${bytes(result.eligible_bytes)}${
-          result.truncated
-            ? ` (${t("webdav_writeback.cache.preview_capped")})`
-            : ""
-        }`,
+  const refreshRemoteIndex = () => {
+    if (
+      !confirmDangerous(
+        t("webdav_writeback.remote_index.confirm_refresh"),
+        t("webdav_writeback.remote_index.confirm_refresh_again"),
       )
-    })
-
-  const releaseCache = () => {
-    if (!window.confirm(t("webdav_writeback.cache.confirm_release"))) return
+    )
+      return
     void run(async () => {
-      const result = await post<CacheCleanup>("/cleanup")
-      setCacheStatus(
-        `${t("webdav_writeback.cache.released")} ${result.released || 0} ${t(
-          "webdav_writeback.cache.files",
-        )} / ${bytes(result.released_bytes)}`,
-      )
-      await loadOverview()
-      setLastUpdated(new Date())
-    })
-  }
-
-  const refreshRemoteIndex = () =>
-    run(async () => {
       const result = await post<RemoteIndexRefreshResult>(
         "/remote-index/refresh",
       )
@@ -1271,10 +1257,11 @@ const WebDAVWriteback = () => {
       await loadOverview()
       setLastUpdated(new Date())
     })
+  }
 
   const rebuildAll = () => {
     if (summary()?.rebuilding) return
-    if (!window.confirm(t("webdav_writeback.rebuild.confirm"))) return
+    if (!confirmDangerous(t("webdav_writeback.rebuild.confirm"))) return
     void run(async () => {
       const result = await post<RebuildAllResult>("/rebuild-all")
       notify.success(
@@ -1305,7 +1292,7 @@ const WebDAVWriteback = () => {
     const ids = selectedHistory()
     if (!ids.length) return
     if (
-      !window.confirm(
+      !confirmDangerous(
         `${t("webdav_writeback.history.confirm_selected")} ${ids.length}`,
       )
     )
@@ -1329,7 +1316,7 @@ const WebDAVWriteback = () => {
         ? ` · ${days} ${t("webdav_writeback.history.days")}`
         : ` · ${t("webdav_writeback.history.no_age_limit")}`
     if (
-      !window.confirm(
+      !confirmDangerous(
         `${t("webdav_writeback.history.confirm_class")} ${translateValue(
           "cleanup",
           cls,
@@ -1447,11 +1434,18 @@ const WebDAVWriteback = () => {
     run(async () => {
       const current = settings()
       if (!current) return
+      if (
+        savedWritebackEnabled() &&
+        !current.enabled &&
+        !confirmDangerous(t("webdav_writeback.settings.confirm_disable"))
+      )
+        return
       const { spool_dir, restart_required_fields, ...payload } = current
       void spool_dir
       void restart_required_fields
       const saved = await post<Settings>("/settings", payload)
       setSettings(saved)
+      setSavedWritebackEnabled(saved.enabled)
       const restart = saved.restart_required_fields || []
       setSettingsStatus(
         restart.length
@@ -1919,30 +1913,6 @@ const WebDAVWriteback = () => {
         <Box
           w="$full"
           borderWidth="1px"
-          borderColor="$neutral6"
-          rounded="$lg"
-          p="$3"
-        >
-          <Heading size="base" mb="$1">
-            {t("webdav_writeback.cache.title")}
-          </Heading>
-          <Text size="sm" color="$neutral10" mb="$2">
-            {t("webdav_writeback.cache.description")}
-          </Text>
-          <HStack spacing="$2" wrap="wrap">
-            <Button variant="outline" onClick={previewCache}>
-              {t("webdav_writeback.cache.preview")}
-            </Button>
-            <Button onClick={releaseCache}>
-              {t("webdav_writeback.cache.release")}
-            </Button>
-            <Text size="sm">{cacheStatus()}</Text>
-          </HStack>
-        </Box>
-
-        <Box
-          w="$full"
-          borderWidth="1px"
           borderColor="$danger7"
           rounded="$lg"
           p="$3"
@@ -2347,7 +2317,7 @@ const WebDAVWriteback = () => {
                                   variant="outline"
                                   onClick={() => {
                                     if (
-                                      !window.confirm(
+                                      !confirmDangerous(
                                         t(
                                           "webdav_writeback.active.confirm_cancel_one",
                                         ),
