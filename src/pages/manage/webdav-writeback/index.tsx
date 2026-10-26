@@ -174,7 +174,6 @@ type Settings = {
   incoming_reservation_chunk_mb: number
   workers: number
   upload_workers: number
-  large_upload_workers: number
   provider_probe_workers: number
   completed_remote_probe_seconds: number
   provider_snapshot_ttl_seconds: number
@@ -1374,11 +1373,7 @@ const WebDAVWriteback = () => {
       key: "upload_workers",
       label: "webdav_writeback.settings.upload_workers",
       min: 1,
-    },
-    {
-      key: "large_upload_workers",
-      label: "webdav_writeback.settings.large_upload_workers",
-      min: 1,
+      hint: "webdav_writeback.settings.upload_workers_hint",
     },
     {
       key: "provider_probe_workers",
