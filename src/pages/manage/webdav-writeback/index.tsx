@@ -38,8 +38,9 @@ import {
 import { useManageTitle, useT } from "~/hooks"
 import { Resp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
+import ReconciliationPanel from "./ReconciliationPanel"
 
-type Tab = "overview" | "active" | "history" | "settings"
+type Tab = "overview" | "active" | "history" | "settings" | "reconciliation"
 
 type StateSummary = {
   count: number
@@ -1131,6 +1132,8 @@ const WebDAVWriteback = () => {
           break
         case "settings":
           return
+        case "reconciliation":
+          return
       }
       setLastUpdated(new Date())
     } finally {
@@ -1773,6 +1776,7 @@ const WebDAVWriteback = () => {
               ["active", "webdav_writeback.tabs.active"],
               ["history", "webdav_writeback.tabs.history"],
               ["settings", "webdav_writeback.tabs.settings"],
+              ["reconciliation", "webdav_writeback.tabs.reconciliation"],
             ] as const
           }
         >
@@ -1931,6 +1935,10 @@ const WebDAVWriteback = () => {
             )}
           </Button>
         </Box>
+      </Show>
+
+      <Show when={tab() === "reconciliation"}>
+        <ReconciliationPanel />
       </Show>
 
       <Show when={tab() === "active"}>
