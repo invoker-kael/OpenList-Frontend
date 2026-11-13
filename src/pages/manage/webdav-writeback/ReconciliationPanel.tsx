@@ -6,7 +6,6 @@ import {
   FormLabel,
   Heading,
   HStack,
-  Input,
   Table,
   Tbody,
   Td,
@@ -17,6 +16,7 @@ import {
   VStack,
 } from "@hope-ui/solid"
 import { For, onCleanup, onMount, Show, createSignal } from "solid-js"
+import { FolderChooseInput } from "~/components"
 import { useT } from "~/hooks"
 import { Resp } from "~/types"
 import { handleResp, r } from "~/utils"
@@ -283,9 +283,9 @@ const ReconciliationPanel = () => {
           <HStack w="$full" alignItems="flex-end" spacing="$2" wrap="wrap">
             <FormControl maxW="$96">
               <FormLabel>{t("webdav_writeback.reconciliation.root")}</FormLabel>
-              <Input
+              <FolderChooseInput
                 value={root()}
-                onInput={(event) => setRoot(event.currentTarget.value)}
+                onChange={setRoot}
                 placeholder={t("webdav_writeback.reconciliation.root_placeholder")}
               />
             </FormControl>

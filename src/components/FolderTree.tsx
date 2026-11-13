@@ -420,6 +420,7 @@ export const FolderChooseInput = (props: {
   onChange: (path: string) => void
   id?: string
   onlyFolder?: boolean
+  placeholder?: string
 }) => {
   const { isOpen, onOpen, onClose } = createDisclosure()
   const t = useT()
@@ -432,11 +433,14 @@ export const FolderChooseInput = (props: {
           onInput={(e) => props.onChange(e.currentTarget.value)}
           readOnly={props.onlyFolder}
           onClick={props.onlyFolder ? onOpen : () => {}}
-          placeholder={t(
-            `global.${
-              props.onlyFolder ? "choose_folder" : "choose_or_input_path"
-            }`,
-          )}
+          placeholder={
+            props.placeholder ??
+            t(
+              `global.${
+                props.onlyFolder ? "choose_folder" : "choose_or_input_path"
+              }`,
+            )
+          }
         />
         <Show when={!props.onlyFolder}>
           <Button onClick={onOpen}>{t("global.choose")}</Button>
