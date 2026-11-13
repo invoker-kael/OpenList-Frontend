@@ -264,6 +264,22 @@ const ReconciliationPanel = () => {
       ? t(`webdav_writeback.reconciliation.states.${value}`)
       : t("webdav_writeback.reconciliation.idle")
 
+const isStartable = () =>
+    !run() || run()?.state === "completed" || run()?.state === "canceled"
+
+  const currentStep = () => {
+    const value = run()?.state
+    if (value === "collecting" || isStartable()) return 1
+    if (value === "comparing" || value === "compare_failed") return 2
+    return 3
+  }
+
+  const stepStatus = (step: number) => {
+    if (isStartable()) return step === 1 ? "current" : "waiting"
+    if (step < currentStep()) return "done"
+    return step === currentStep() ? "current" : "waiting"
+  }
+
   return (
     <VStack w="$full" alignItems="start" spacing="$3">
       <Box
@@ -276,10 +292,64 @@ const ReconciliationPanel = () => {
         <Heading size="base" mb="$1">
           {t("webdav_writeback.reconciliation.title")}
         </Heading>
-        <Text size="sm" color="$neutral10" mb="$3">
+        <Text size="sm" color="$neutral10">
           {t("webdav_writeback.reconciliation.description")}
         </Text>
-        <Show when={!run() || run()?.state === "completed" || run()?.state === "canceled"}>
+      </Box>
+
+      <Show when={run()}>
+        {(current) => (
+          <Box
+            w="$full"
+            borderWidth="1px"
+            borderColor="$neutral6"
+            rounded="$lg"
+            p="$3"
+          >
+            <HStack w="$full" justifyContent="space-between" wrap="wrap">
+              <Text><b>{current().root}</b></Text>
+              <HStack spacing="$2">
+                <Badge colorScheme={current().state === "compare_failed" || current().state === "delete_failed" ? "danger" : "accent"}>
+                  {stateLabel(current().state)}
+                </Badge>
+                <Button variant="outline" onClick={() => void refresh()} disabled={loading()}>
+                  {t("webdav_writeback.reconciliation.refresh")}
+                </Button>
+              </HStack>
+            </HStack>
+            <Show when={current().last_error}>
+              <Text color="$danger11" size="sm" mt="$2">
+                {t("webdav_writeback.reconciliation.errors." + reconciliationErrorKey(new Error(current().last_error)))}
+              </Text>
+            </Show>
+          </Box>
+        )}
+      </Show>
+
+      <Show when={status()}>
+        <Text size="sm">{status()}</Text>
+      </Show>
+      <Show when={error()}>
+        <Text color="$danger11" size="sm">{error()}</Text>
+      </Show>
+
+      <Box
+        w="$full"
+        borderWidth="1px"
+        borderColor={currentStep() === 1 ? "$accent6" : "$neutral6"}
+        rounded="$lg"
+        p="$3"
+      >
+        <HStack w="$full" justifyContent="space-between" wrap="wrap" mb="$2">
+          <Heading size="sm">{t("webdav_writeback.reconciliation.steps.collect")}</Heading>
+          <Badge colorScheme={currentStep() === 1 ? "accent" : "neutral"}>
+            {t("webdav_writeback.reconciliation.steps." + stepStatus(1))}
+          </Badge>
+        </HStack>
+        <Text size="sm" color="$neutral10" mb="$3">
+          {t("webdav_writeback.reconciliation.steps.collect_description")}
+        </Text>
+        <Show when={isStartable()}>
           <HStack w="$full" alignItems="flex-end" spacing="$2" wrap="wrap">
             <FormControl maxW="$96">
               <FormLabel>{t("webdav_writeback.reconciliation.root")}</FormLabel>
@@ -294,145 +364,182 @@ const ReconciliationPanel = () => {
             </Button>
           </HStack>
         </Show>
-        <Show when={status()}>
-          <Text size="sm" mt="$2">{status()}</Text>
-        </Show>
-        <Show when={error()}>
-          <Text color="$danger11" size="sm" mt="$2">{error()}</Text>
+        <Show when={!isStartable()}>
+          <HStack wrap="wrap" spacing="$4">
+            <Text>{t("webdav_writeback.reconciliation.source_files")}: {run()?.source_files ?? 0}</Text>
+            <Text>{t("webdav_writeback.reconciliation.source_bytes")}: {bytes(run()?.source_bytes)}</Text>
+          </HStack>
+          <Show when={run()?.state === "collecting"}>
+            <Text size="sm" color="$neutral10" mt="$2">
+              {t("webdav_writeback.reconciliation.instructions.collecting")}
+            </Text>
+            <HStack wrap="wrap" spacing="$2" mt="$3">
+              <Button colorScheme="accent" onClick={finishCollection}>
+                {t("webdav_writeback.reconciliation.finish_collection")}
+              </Button>
+              <Show when={canCancel()}>
+                <Button colorScheme="danger" variant="outline" onClick={cancel}>
+                  {t("webdav_writeback.reconciliation.cancel")}
+                </Button>
+              </Show>
+            </HStack>
+          </Show>
         </Show>
       </Box>
 
-      <Show when={run()}>
-        {(current) => (
-          <VStack w="$full" alignItems="start" spacing="$3">
-            <Box
-              w="$full"
-              borderWidth="1px"
-              borderColor="$neutral6"
-              rounded="$lg"
-              p="$3"
-            >
-              <HStack w="$full" justifyContent="space-between" wrap="wrap">
-                <Text><b>{current().root}</b></Text>
-                <Badge colorScheme={current().state === "compare_failed" || current().state === "delete_failed" ? "danger" : "accent"}>
-                  {stateLabel(current().state)}
-                </Badge>
-              </HStack>
-              <Text size="sm" color="$neutral10" mt="$2">
-                {t(`webdav_writeback.reconciliation.instructions.${current().state}`)}
-              </Text>
-              <Show when={current().last_error}>
-                <Text color="$danger11" size="sm" mt="$2">
-                  {t(`webdav_writeback.reconciliation.errors.${reconciliationErrorKey(new Error(current().last_error))}`)}
-                </Text>
-              </Show>
+      <Box
+        w="$full"
+        borderWidth="1px"
+        borderColor={currentStep() === 2 ? "$accent6" : "$neutral6"}
+        rounded="$lg"
+        p="$3"
+      >
+        <HStack w="$full" justifyContent="space-between" wrap="wrap" mb="$2">
+          <Heading size="sm">{t("webdav_writeback.reconciliation.steps.compare")}</Heading>
+          <Badge colorScheme={currentStep() === 2 ? "accent" : "neutral"}>
+            {t("webdav_writeback.reconciliation.steps." + stepStatus(2))}
+          </Badge>
+        </HStack>
+        <Text size="sm" color="$neutral10" mb="$3">
+          {t("webdav_writeback.reconciliation.steps.compare_description")}
+        </Text>
+        <Show when={currentStep() >= 2}>
+          <HStack wrap="wrap" spacing="$4" mb="$3">
+            <Text>{t("webdav_writeback.reconciliation.remote_files")}: {run()?.remote_files ?? 0}</Text>
+            <Text>{t("webdav_writeback.reconciliation.matched")}: {run()?.matched_files ?? 0}</Text>
+            <Text>{t("webdav_writeback.reconciliation.missing")}: {run()?.missing_files ?? 0}</Text>
+            <Text>{t("webdav_writeback.reconciliation.extra")}: {run()?.extra_files ?? 0}</Text>
+            <Text>{t("webdav_writeback.reconciliation.directories")}: {run()?.scanned_directories ?? 0}</Text>
+          </HStack>
+        </Show>
+        <Show when={run()?.state === "comparing" || run()?.state === "compare_failed"}>
+          <Text size="sm" color="$neutral10">
+            {t("webdav_writeback.reconciliation.instructions." + run()!.state)}
+          </Text>
+        </Show>
+        <Show when={run()?.state === "compare_failed" || run()?.state === "delete_failed"}>
+          <Button colorScheme="accent" mt="$3" onClick={finishCollection}>
+            {t("webdav_writeback.reconciliation.compare_again")}
+          </Button>
+        </Show>
+        <Show when={canCancel() && currentStep() === 2}>
+          <Button colorScheme="danger" variant="outline" mt="$3" onClick={cancel}>
+            {t("webdav_writeback.reconciliation.cancel")}
+          </Button>
+        </Show>
+      </Box>
 
-              <HStack wrap="wrap" spacing="$4" mt="$3">
-                <Text>{t("webdav_writeback.reconciliation.source_files")}: {current().source_files}</Text>
-                <Text>{t("webdav_writeback.reconciliation.source_bytes")}: {bytes(current().source_bytes)}</Text>
-                <Text>{t("webdav_writeback.reconciliation.remote_files")}: {current().remote_files}</Text>
-                <Text>{t("webdav_writeback.reconciliation.matched")}: {current().matched_files}</Text>
-                <Text>{t("webdav_writeback.reconciliation.missing")}: {current().missing_files}</Text>
-                <Text>{t("webdav_writeback.reconciliation.extra")}: {current().extra_files}</Text>
-                <Text>{t("webdav_writeback.reconciliation.directories")}: {current().scanned_directories}</Text>
-                <Text>{t("webdav_writeback.reconciliation.deleted")}: {current().deleted_files}</Text>
-              </HStack>
+      <Box
+        w="$full"
+        borderWidth="1px"
+        borderColor={currentStep() === 3 ? "$accent6" : "$neutral6"}
+        rounded="$lg"
+        p="$3"
+      >
+        <HStack w="$full" justifyContent="space-between" wrap="wrap" mb="$2">
+          <Heading size="sm">{t("webdav_writeback.reconciliation.steps.review")}</Heading>
+          <Badge colorScheme={currentStep() === 3 ? "accent" : "neutral"}>
+            {t("webdav_writeback.reconciliation.steps." + stepStatus(3))}
+          </Badge>
+        </HStack>
+        <Text size="sm" color="$neutral10" mb="$3">
+          {t("webdav_writeback.reconciliation.steps.review_description")}
+        </Text>
+        <Show when={run() && ["preview", "deleting", "delete_failed", "ready", "completed", "canceled"].includes(run()!.state)}>
+          <Text size="sm" color="$neutral10">
+            {t("webdav_writeback.reconciliation.instructions." + run()!.state)}
+          </Text>
+        </Show>
+        <Show when={run() && currentStep() >= 3}>
+          <HStack wrap="wrap" spacing="$4" mt="$3">
+            <Text>{t("webdav_writeback.reconciliation.deleted")}: {run()?.deleted_files ?? 0}</Text>
+          </HStack>
+        </Show>
+        <HStack wrap="wrap" spacing="$2" mt="$3">
+          <Show when={run()?.state === "preview" && candidateCount() > 0}>
+            <Button colorScheme="danger" onClick={deleteExtras}>
+              {t("webdav_writeback.reconciliation.delete_extras")} ({candidateCount()})
+            </Button>
+          </Show>
+          <Show when={run()?.state === "delete_failed" && candidateCount() > 0}>
+            <Button colorScheme="danger" onClick={deleteExtras}>
+              {t("webdav_writeback.reconciliation.retry_delete")} ({candidateCount()})
+            </Button>
+          </Show>
+          <Show when={run()?.state === "ready"}>
+            <Button colorScheme="accent" onClick={finish}>
+              {t("webdav_writeback.reconciliation.finish")}
+            </Button>
+          </Show>
+          <Show when={canCancel() && currentStep() === 3}>
+            <Button colorScheme="danger" variant="outline" onClick={cancel}>
+              {t("webdav_writeback.reconciliation.cancel")}
+            </Button>
+          </Show>
+        </HStack>
+      </Box>
 
-              <HStack wrap="wrap" spacing="$2" mt="$3">
-                <Show when={current().state === "collecting" || current().state === "compare_failed" || current().state === "delete_failed"}>
-                  <Button colorScheme="accent" onClick={finishCollection}>
-                    {t(current().state === "collecting" ? "webdav_writeback.reconciliation.finish_collection" : "webdav_writeback.reconciliation.compare_again")}
-                  </Button>
-                </Show>
-                <Show when={current().state === "preview" && candidateCount() > 0}>
-                  <Button colorScheme="danger" onClick={deleteExtras}>
-                    {t("webdav_writeback.reconciliation.delete_extras")} ({candidateCount()})
-                  </Button>
-                </Show>
-                <Show when={current().state === "delete_failed" && candidateCount() > 0}>
-                  <Button colorScheme="danger" onClick={deleteExtras}>
-                    {t("webdav_writeback.reconciliation.retry_delete")} ({candidateCount()})
-                  </Button>
-                </Show>
-                <Show when={current().state === "ready"}>
-                  <Button colorScheme="accent" onClick={finish}>
-                    {t("webdav_writeback.reconciliation.finish")}
-                  </Button>
-                </Show>
-                <Show when={canCancel()}>
-                  <Button colorScheme="danger" variant="outline" onClick={cancel}>
-                    {t("webdav_writeback.reconciliation.cancel")}
-                  </Button>
-                </Show>
-                <Button variant="outline" onClick={() => void refresh()} disabled={loading()}>
-                  {t("webdav_writeback.reconciliation.refresh")}
-                </Button>
-              </HStack>
-            </Box>
-
-            <Show when={(current().state === "preview" || current().state === "delete_failed") && candidates().length > 0}>
-              <Box w="$full" overflowX="auto" borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
-                <Heading size="sm" mb="$2">
-                  {t("webdav_writeback.reconciliation.candidate_list")} ({candidateCount()})
-                </Heading>
-                <HStack w="$full" justifyContent="space-between" mb="$2" wrap="wrap">
-                  <Text size="xs" color="$neutral10">
-                    {t("webdav_writeback.reconciliation.showing_page")} {candidatePage()} / {Math.max(1, Math.ceil(candidateCount() / 100))}
-                  </Text>
-                  <HStack spacing="$2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={candidatePage() <= 1 || loading()}
-                      onClick={() => {
-                        setCandidatePage(candidatePage() - 1)
-                        void refresh()
-                      }}
-                    >
-                      {t("webdav_writeback.reconciliation.previous")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={candidatePage() >= Math.ceil(candidateCount() / 100) || loading()}
-                      onClick={() => {
-                        setCandidatePage(candidatePage() + 1)
-                        void refresh()
-                      }}
-                    >
-                      {t("webdav_writeback.reconciliation.next")}
-                    </Button>
-                  </HStack>
-                </HStack>
-                <Table dense highlightOnHover>
-                  <Thead>
-                    <Tr>
-                      <Th>{t("webdav_writeback.reconciliation.path")}</Th>
-                      <Th>{t("webdav_writeback.reconciliation.local_size")}</Th>
-                      <Th>{t("webdav_writeback.reconciliation.remote_size")}</Th>
-                      <Th>{t("webdav_writeback.reconciliation.result")}</Th>
-                    </Tr>
-                  </Thead>
-                  <Tbody>
-                    <For each={candidates()}>
-                      {(candidate) => (
-                        <Tr>
-                          <Td><Text style={{ "overflow-wrap": "anywhere" }}>{candidate.path}</Text></Td>
-                          <Td>{candidate.is_dir ? "—" : bytes(candidate.size)}</Td>
-                          <Td>{candidate.is_dir ? "—" : bytes(candidate.remote_size)}</Td>
-                          <Td>{t(`webdav_writeback.reconciliation.results.${candidate.result}`)}</Td>
-                        </Tr>
-                      )}
-                    </For>
-                  </Tbody>
-                </Table>
-              </Box>
-            </Show>
-          </VStack>
-        )}
+      <Show when={(run()?.state === "preview" || run()?.state === "delete_failed") && candidates().length > 0}>
+        <Box w="$full" overflowX="auto" borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
+          <Heading size="sm" mb="$2">
+            {t("webdav_writeback.reconciliation.candidate_list")} ({candidateCount()})
+          </Heading>
+          <HStack w="$full" justifyContent="space-between" mb="$2" wrap="wrap">
+            <Text size="xs" color="$neutral10">
+              {t("webdav_writeback.reconciliation.showing_page")} {candidatePage()} / {Math.max(1, Math.ceil(candidateCount() / 100))}
+            </Text>
+            <HStack spacing="$2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={candidatePage() <= 1 || loading()}
+                onClick={() => {
+                  setCandidatePage(candidatePage() - 1)
+                  void refresh()
+                }}
+              >
+                {t("webdav_writeback.reconciliation.previous")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={candidatePage() >= Math.ceil(candidateCount() / 100) || loading()}
+                onClick={() => {
+                  setCandidatePage(candidatePage() + 1)
+                  void refresh()
+                }}
+              >
+                {t("webdav_writeback.reconciliation.next")}
+              </Button>
+            </HStack>
+          </HStack>
+          <Table dense highlightOnHover>
+            <Thead>
+              <Tr>
+                <Th>{t("webdav_writeback.reconciliation.path")}</Th>
+                <Th>{t("webdav_writeback.reconciliation.local_size")}</Th>
+                <Th>{t("webdav_writeback.reconciliation.remote_size")}</Th>
+                <Th>{t("webdav_writeback.reconciliation.result")}</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              <For each={candidates()}>
+                {(candidate) => (
+                  <Tr>
+                    <Td><Text style={{ "overflow-wrap": "anywhere" }}>{candidate.path}</Text></Td>
+                    <Td>{candidate.is_dir ? "—" : bytes(candidate.size)}</Td>
+                    <Td>{candidate.is_dir ? "—" : bytes(candidate.remote_size)}</Td>
+                    <Td>{t("webdav_writeback.reconciliation.results." + candidate.result)}</Td>
+                  </Tr>
+                )}
+              </For>
+            </Tbody>
+          </Table>
+        </Box>
       </Show>
     </VStack>
   )
+
 }
 
 export default ReconciliationPanel

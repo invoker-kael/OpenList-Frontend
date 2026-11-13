@@ -269,6 +269,17 @@
   "reconciliation": {
     "title": "Cloud Sync 一次性全量清點",
     "description": "OpenList 無法掃描 Cloud Sync 的私有本機目錄。本獨立流程透過 Cloud Sync 的 PUT/MKCOL 請求建立僅含中繼資料的清單，再與 115 比對。上傳本文只在串流計算 SHA-1 後丟棄，不佔用 Writeback 快取。Fresh LIST 每次只查一個目錄，並遵守儲存後端的 LimitRate。",
+    "steps": {
+      "collect": "步驟 1：收集 Cloud Sync 清單",
+      "collect_description": "選擇 WebDAV 目錄並啟動收集。Cloud Sync 會看到空目錄；PUT 本文只計算雜湊後丟棄。",
+      "compare": "步驟 2：與 115 比對",
+      "compare_description": "Cloud Sync 掃描結束後關閉收集。OpenList 依儲存限速逐一 Fresh LIST 115 目錄；比對階段不會刪除檔案。",
+      "review": "步驟 3：審核並完成",
+      "review_description": "先審核 115 獨有或內容不符的候選檔案，再確認刪除。最後完成任務，將缺少的路徑提供給 Cloud Sync，供下一輪一般上傳。",
+      "current": "目前步驟",
+      "waiting": "等待中",
+      "done": "已完成"
+    },
     "root": "要清點的 WebDAV 目錄",
     "root_placeholder": "例如：/115備份/照片",
     "root_required": "請輸入一個已存在且不是根目錄的 WebDAV 目錄。",

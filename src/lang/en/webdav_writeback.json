@@ -269,6 +269,17 @@
   "reconciliation": {
     "title": "One-time Cloud Sync inventory",
     "description": "OpenList cannot scan Cloud Sync's private local directory. This separate workflow builds a metadata-only inventory from Cloud Sync PUT and MKCOL requests, then compares it with 115. Upload bodies are streamed through SHA-1 and discarded without using the Writeback spool. Fresh LIST runs one directory at a time and follows the storage backend's LimitRate.",
+    "steps": {
+      "collect": "1. Collect Cloud Sync inventory",
+      "collect_description": "Choose a WebDAV directory and start collection. Cloud Sync will see an empty directory; PUT bodies are hashed and discarded.",
+      "compare": "2. Compare with 115",
+      "compare_description": "After Cloud Sync finishes its scan, close collection. OpenList Fresh LISTs one 115 directory at a time and follows the storage rate limit. Nothing is deleted during comparison.",
+      "review": "3. Review and finish",
+      "review_description": "Review the 115-only or mismatching candidates before confirming deletion. Then finish the task to expose missing paths to Cloud Sync for its next normal upload.",
+      "current": "Current",
+      "waiting": "Waiting",
+      "done": "Done"
+    },
     "root": "WebDAV directory to inventory",
     "root_placeholder": "For example: /115-backup/photos",
     "root_required": "Enter an existing, non-root WebDAV directory.",

@@ -269,6 +269,17 @@
   "reconciliation": {
     "title": "Cloud Sync 一次性全量清点",
     "description": "OpenList 无法扫描 Cloud Sync 的私有本地目录。本独立流程通过 Cloud Sync 的 PUT/MKCOL 请求建立仅含元数据的清单，再与 115 对比。上传正文只在流式计算 SHA-1 后丢弃，不占用 Writeback 缓存。Fresh LIST 每次只查一个目录，并遵守存储后端的 LimitRate。",
+    "steps": {
+      "collect": "第 1 步：收集 Cloud Sync 清单",
+      "collect_description": "选择 WebDAV 目录并启动收集。Cloud Sync 会看到空目录；PUT 正文只计算哈希后丢弃。",
+      "compare": "第 2 步：与 115 对比",
+      "compare_description": "Cloud Sync 扫描结束后关闭收集。OpenList 按存储限速逐个 Fresh LIST 115 目录；对比阶段不会删除文件。",
+      "review": "第 3 步：审核并完成",
+      "review_description": "先审核 115 独有或内容不匹配的候选文件，再确认删除。最后完成任务，将缺失路径暴露给 Cloud Sync，供下一轮普通上传。",
+      "current": "当前步骤",
+      "waiting": "等待中",
+      "done": "已完成"
+    },
     "root": "要清点的 WebDAV 目录",
     "root_placeholder": "例如：/115备份/照片",
     "root_required": "请输入一个已存在且不是根目录的 WebDAV 目录。",
