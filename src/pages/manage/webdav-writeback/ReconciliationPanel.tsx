@@ -32,6 +32,7 @@ type ReconciliationRun = {
   matched_files: number
   missing_files: number
   extra_files: number
+  unknown_files: number
   scanned_directories: number
   deleted_files: number
   started_at: string
@@ -51,7 +52,10 @@ type Candidate = {
 type ReconciliationStatus = {
   run?: ReconciliationRun
   candidate_count: number
+  has_task: boolean
+  active: boolean
   can_cancel: boolean
+  can_clear: boolean
 }
 
 const API = "/admin/webdav-writeback/reconciliation"
@@ -88,6 +92,7 @@ const reconciliationErrorKey = (cause: unknown) => {
   if (message.includes("candidate")) return "candidate_changed"
   if (message.includes("115") && (message.includes("listing") || message.includes("refresh"))) return "remote_list"
   if (message.includes("delete")) return "remote_delete"
+  if (message.includes("driver")) return "unsupported_driver"
   if (message.includes("storage") || message.includes("root")) return "invalid_root"
   if (message.includes("busy") || message.includes("wait")) return "busy"
   if (message.includes("another reconciliation")) return "task_active"
@@ -100,7 +105,10 @@ const ReconciliationPanel = () => {
   const [run, setRun] = createSignal<ReconciliationRun>()
   const [candidateCount, setCandidateCount] = createSignal(0)
   const [canCancel, setCanCancel] = createSignal(false)
-  const [candidates, setCandidates] = createSignal<Candidate[]>([])
+  const [canClear, setCanClear] = createSignal(false)
+  const [hasTask, setHasTask] = createSignal<boolean | undefined>(undefined)
+  const [taskActive, setTaskActive] = createSignal(false)
+  const [candidates, setCandidates = createSignal<Candidate[]>([])
   const [candidatePage, setCandidatePage] = createSignal(1)
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal("")
@@ -112,6 +120,9 @@ const ReconciliationPanel = () => {
     try {
       const current = await get<ReconciliationStatus>("")
       setRun(current.run)
+      setHasTask(current.has_task)
+      setTaskActive(current.active)
+      setCanClear(current.can_clear)
       setCandidateCount(current.candidate_count || 0)
       setCanCancel(current.can_cancel)
       const state = current.run?.state
@@ -272,6 +283,25 @@ const ReconciliationPanel = () => {
     }
   }
 
+  const clearTask = async () => {
+    const current = run()
+    if (!current || !canClear()) return
+    if (
+      !confirmDangerous(
+        t("webdav_writeback.reconciliation.confirm_clear_task"),
+        t("webdav_writeback.reconciliation.confirm_clear_task_again"),
+      )
+    )
+      return
+    try {
+      await post("/clear", { run_id: current.id })
+      setStatus(t("webdav_writeback.reconciliation.task_cleared"))
+      await refresh()
+    } catch (cause) {
+      setError(t(`webdav_writeback.reconciliation.errors.${reconciliationErrorKey(cause)}`))
+    }
+  }
+
   onMount(() => {
     void refresh()
     const timer = window.setInterval(() => void refresh(), 5000)
@@ -315,6 +345,50 @@ const isStartable = () =>
           {t("webdav_writeback.reconciliation.description")}
         </Text>
       </Box>
+
+      <Show when={hasTask() !== undefined}>
+        <Box w="$full" borderWidth="1px" borderColor="$neutral6" rounded="$lg" p="$3">
+          <HStack w="$full" justifyContent="space-between" wrap="wrap">
+            <HStack spacing="$2" wrap="wrap">
+              <Text><b>{t("webdav_writeback.reconciliation.task_status")}</b></Text>
+              <Badge colorScheme={taskActive() ? "accent" : "neutral"}>
+                {taskActive()
+                  ? t("webdav_writeback.reconciliation.task_active")
+                  : hasTask()
+                    ? t("webdav_writeback.reconciliation.task_inactive")
+                    : t("webdav_writeback.reconciliation.task_none")}
+              </Badge>
+              <Show when={run()}>
+                <Badge colorScheme="neutral">{stateLabel(run()?.state)}</Badge>
+              </Show>
+            </HStack>
+            <Show when={canClear()}>
+              <Button colorScheme="danger" variant="outline" onClick={clearTask} disabled={loading()}>
+                {t("webdav_writeback.reconciliation.clear_task")}
+              </Button>
+            </Show>
+          </HStack>
+          <Show when={taskActive() && run()}>
+            <HStack wrap="wrap" spacing="$4" mt="$2">
+              <Show when={run()?.state === "collecting"}>
+                <Text>{t("webdav_writeback.reconciliation.source_files")}: {run()?.source_files ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.source_bytes")}: {bytes(run()?.source_bytes)}</Text>
+              </Show>
+              <Show when={run()?.state === "comparing" || run()?.state === "compare_failed"}>
+                <Text>{t("webdav_writeback.reconciliation.directories")}: {run()?.scanned_directories ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.remote_files")}: {run()?.remote_files ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.matched")}: {run()?.matched_files ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.missing")}: {run()?.missing_files ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.extra")}: {run()?.extra_files ?? 0}</Text>
+                <Text>{t("webdav_writeback.reconciliation.unknown")}: {run()?.unknown_files ?? 0}</Text>
+              </Show>
+              <Show when={run()?.state === "deleting" || run()?.state === "delete_failed"}>
+                <Text>{t("webdav_writeback.reconciliation.deleted")}: {run()?.deleted_files ?? 0} / {run()?.extra_files ?? 0}</Text>
+              </Show>
+            </HStack>
+          </Show>
+        </Box>
+      </Show>
 
       <Show when={run()}>
         {(current) => (
