@@ -108,7 +108,7 @@ const ReconciliationPanel = () => {
   const [canClear, setCanClear] = createSignal(false)
   const [hasTask, setHasTask] = createSignal<boolean | undefined>(undefined)
   const [taskActive, setTaskActive] = createSignal(false)
-  const [candidates, setCandidates = createSignal<Candidate[]>([])
+  const [candidates, setCandidates] = createSignal<Candidate[]>([])
   const [candidatePage, setCandidatePage] = createSignal(1)
   const [loading, setLoading] = createSignal(false)
   const [error, setError] = createSignal("")
