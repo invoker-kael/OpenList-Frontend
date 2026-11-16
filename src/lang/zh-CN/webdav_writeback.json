@@ -383,5 +383,11 @@
     "start_comparison": "开始 115 对比",
     "confirm_start_comparison": "现在开始逐个 Fresh LIST 对比 115？对比期间不会删除文件。",
     "confirm_start_comparison_again": "再次确认开始对比。每次只查询一个目录，并遵守存储后端限速。"
+  },
+  "admin_account": {
+    "create": "创建管理员账号",
+    "warning": "管理员账号拥有 OpenList 完整管理权限，不是只读账号。",
+    "confirm": "将此用户创建为 OpenList 管理员？该账号将获得完整管理权限。",
+    "confirm_again": "再次确认创建完整管理员账号；仅为可信用户创建。"
   }
 }

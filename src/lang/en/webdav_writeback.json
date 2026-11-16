@@ -383,5 +383,11 @@
     "start_comparison": "Start 115 comparison",
     "confirm_start_comparison": "Start sequential Fresh LIST comparison with 115 now? No files will be deleted during comparison.",
     "confirm_start_comparison_again": "Confirm starting the comparison. Each directory is listed one at a time and obeys the storage backend rate limit."
+  },
+  "admin_account": {
+    "create": "Create an administrator account",
+    "warning": "Admin accounts have full OpenList management access. This is not a read-only account.",
+    "confirm": "Create this user as an OpenList administrator? It will have full admin privileges.",
+    "confirm_again": "Final confirmation: create a full administrator account, only for a trusted person."
   }
 }

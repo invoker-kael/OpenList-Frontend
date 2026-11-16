@@ -6,6 +6,7 @@ import {
   FormLabel,
   Heading,
   Input,
+  Text,
   VStack,
 } from "@hope-ui/solid"
 import { MaybeLoading, FolderChooseInput } from "~/components"
@@ -42,6 +43,8 @@ const Permission = (props: {
     </FormControl>
   )
 }
+
+const ADMIN_ROLE = 2
 
 const AddOrEdit = () => {
   const t = useT()
@@ -98,6 +101,22 @@ const AddOrEdit = () => {
               value={user.password}
               onInput={(e) => setUser("password", e.currentTarget.value)}
             />
+          </FormControl>
+        </Show>
+
+        <Show when={!id}>
+          <FormControl w="$full">
+            <Checkbox
+              checked={user.role === ADMIN_ROLE}
+              onChange={(e: any) =>
+                setUser("role", e.currentTarget.checked ? ADMIN_ROLE : 0)
+              }
+            >
+              {t("webdav_writeback.admin_account.create")}
+            </Checkbox>
+            <Text color="$danger11" fontSize="$sm" mt="$1">
+              {t("webdav_writeback.admin_account.warning")}
+            </Text>
           </FormControl>
         </Show>
 
@@ -163,6 +182,17 @@ const AddOrEdit = () => {
         <Button
           loading={okLoading()}
           onClick={async () => {
+            if (!id && user.role === ADMIN_ROLE) {
+              if (
+                !window.confirm(
+                  t("webdav_writeback.admin_account.confirm"),
+                ) ||
+                !window.confirm(
+                  t("webdav_writeback.admin_account.confirm_again"),
+                )
+              )
+                return
+            }
             const resp = await ok()
             // TODO maybe can use handleRespWithNotifySuccess
             handleResp(resp, async () => {

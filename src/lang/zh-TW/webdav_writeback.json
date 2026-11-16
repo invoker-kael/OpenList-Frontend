@@ -383,5 +383,11 @@
     "start_comparison": "開始 115 比對",
     "confirm_start_comparison": "現在開始逐一 Fresh LIST 比對 115？比對期間不會刪除檔案。",
     "confirm_start_comparison_again": "再次確認開始比對。每次只查詢一個目錄，並遵守儲存後端限速。"
+  },
+  "admin_account": {
+    "create": "建立管理員帳號",
+    "warning": "管理員帳號擁有 OpenList 完整管理權限，並非唯讀帳號。",
+    "confirm": "要將此使用者建立為 OpenList 管理員嗎？該帳號將取得完整管理權限。",
+    "confirm_again": "再次確認建立完整管理員帳號；僅為可信任的使用者建立。"
   }
 }
