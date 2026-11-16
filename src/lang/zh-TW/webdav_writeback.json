@@ -297,7 +297,8 @@
       "delete_failed": "刪除已暫停",
       "ready": "可以恢復一般 WebDAV",
       "completed": "清點已完成",
-      "canceled": "已取消"
+      "canceled": "已取消",
+      "collected": "收集完成，等待比對"
     },
     "instructions": {
       "collecting": "Cloud Sync 看到的是空目錄。請等它的全量掃描結束。PUT 和 MKCOL 會記錄路徑及中繼資料；本文雜湊完成後即丟棄，OpenList 不會保留檔案內容。",
@@ -308,7 +309,8 @@
       "delete_failed": "部分刪除可能已成功。可以重試刪除，或重新比對並產生新的預覽。",
       "ready": "115 多餘項目已清理。完成任務後會將 Cloud Sync 清單寫入 Writeback；缺少的檔案會對 Cloud Sync 顯示為不存在。",
       "completed": "一般 WebDAV 已恢復。請再次執行 Cloud Sync；缺少的路徑將進入一般 Writeback 上傳流程。",
-      "canceled": "任務已停止，未刪除 115 物件。已接收路徑會在 WebDAV 中顯示為缺少；請再次執行 Cloud Sync 重傳。"
+      "canceled": "任務已停止，未刪除 115 物件。已接收路徑會在 WebDAV 中顯示為缺少；請再次執行 Cloud Sync 重傳。",
+      "collected": "收集已關閉，WebDAV 現在會顯示已收集的 Cloud Sync 清單。此時不會請求 115 LIST 或刪除檔案，需由你點擊開始比對。"
     },
     "source_files": "Cloud Sync 檔案數",
     "source_bytes": "Cloud Sync 總大小",
@@ -320,9 +322,9 @@
     "deleted": "已刪除的 115 物件",
     "finish_collection": "Cloud Sync 掃描已結束",
     "compare_again": "重新比對",
-    "confirm_collection_end": "結束收集並開始逐一 Fresh LIST 比對 115？此時尚不會刪除任何 115 物件。",
+    "confirm_collection_end": "結束 Cloud Sync 清單收集？這會關閉收集，但暫時不會存取 115。",
     "confirm_compare_again": "使用已儲存的 Cloud Sync 清單重新比對？這會再次向 115 發出 Fresh LIST。",
-    "confirm_collection_end_again": "再次確認開始比對。每次只查詢一個目錄，並遵守儲存後端限速。",
+    "confirm_collection_end_again": "再次確認結束收集。下一步由你明確點擊開始 115 比對。",
     "comparison_started": "比對已啟動。",
     "delete_extras": "刪除已審核的 115 多餘項目",
     "retry_delete": "重試已審核刪除",
@@ -360,6 +362,10 @@
       "busy": "寫回正在處理請求。請等待目前請求完成後重試。",
       "task_active": "已有一個清點任務正在執行。",
       "request_failed": "請求未能完成。請重新整理任務狀態後重試。"
-    }
+    },
+    "collection_finished": "清單收集已結束。檢查收集結果後，再手動開始比對。",
+    "start_comparison": "開始 115 比對",
+    "confirm_start_comparison": "現在開始逐一 Fresh LIST 比對 115？比對期間不會刪除檔案。",
+    "confirm_start_comparison_again": "再次確認開始比對。每次只查詢一個目錄，並遵守儲存後端限速。"
   }
 }

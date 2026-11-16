@@ -297,7 +297,8 @@
       "delete_failed": "Deletion paused",
       "ready": "Ready to restore normal WebDAV",
       "completed": "Inventory finished",
-      "canceled": "Canceled"
+      "canceled": "Canceled",
+      "collected": "Collection finished — ready to compare"
     },
     "instructions": {
       "collecting": "Cloud Sync sees an empty directory. Let its full scan finish. PUT and MKCOL requests add paths and metadata here; file contents are discarded after hashing and are not recoverable from OpenList.",
@@ -308,7 +309,8 @@
       "delete_failed": "Some deletions may already have succeeded. Retry deletion, or compare again to rebuild the preview before continuing.",
       "ready": "115 extras are cleared. Finish to publish the Cloud Sync inventory in Writeback; missing files will then appear absent to Cloud Sync.",
       "completed": "Normal WebDAV is restored. Trigger Cloud Sync's next scan; missing paths will use the ordinary Writeback upload flow.",
-      "canceled": "The task stopped without deleting 115 objects. Received paths are missing in WebDAV; run Cloud Sync again to resend them."
+      "canceled": "The task stopped without deleting 115 objects. Received paths are missing in WebDAV; run Cloud Sync again to resend them.",
+      "collected": "Collection is closed. The captured Cloud Sync manifest is now visible to WebDAV. No 115 LIST requests or deletions start until you choose Start comparison."
     },
     "source_files": "Cloud Sync files",
     "source_bytes": "Cloud Sync bytes",
@@ -320,9 +322,9 @@
     "deleted": "115 objects removed",
     "finish_collection": "Cloud Sync scan is finished",
     "compare_again": "Compare again",
-    "confirm_collection_end": "Finish collection and start sequential Fresh LIST comparison with 115? No 115 objects will be deleted yet.",
+    "confirm_collection_end": "Finish collecting the Cloud Sync inventory? This closes collection but does not contact 115 yet.",
     "confirm_compare_again": "Run the comparison again using the saved Cloud Sync inventory? This sends new Fresh LIST requests to 115.",
-    "confirm_collection_end_again": "Confirm the comparison. Each directory is listed one at a time and obeys the storage backend rate limit.",
+    "confirm_collection_end_again": "Confirm closing collection. You will explicitly start the 115 comparison as the next step.",
     "comparison_started": "Comparison started.",
     "delete_extras": "Delete reviewed 115 extras",
     "retry_delete": "Retry reviewed deletions",
@@ -360,6 +362,10 @@
       "busy": "Writeback is busy. Wait for active requests to finish, then retry.",
       "task_active": "Another inventory task is already active.",
       "request_failed": "The request could not be completed. Refresh the task status and retry."
-    }
+    },
+    "collection_finished": "Collection finished. Review the captured manifest, then start comparison when ready.",
+    "start_comparison": "Start 115 comparison",
+    "confirm_start_comparison": "Start sequential Fresh LIST comparison with 115 now? No files will be deleted during comparison.",
+    "confirm_start_comparison_again": "Confirm starting the comparison. Each directory is listed one at a time and obeys the storage backend rate limit."
   }
 }

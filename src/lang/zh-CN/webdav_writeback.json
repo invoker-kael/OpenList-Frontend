@@ -297,7 +297,8 @@
       "delete_failed": "删除已暂停",
       "ready": "可以恢复普通 WebDAV",
       "completed": "清点已完成",
-      "canceled": "已取消"
+      "canceled": "已取消",
+      "collected": "收集完成，等待对比"
     },
     "instructions": {
       "collecting": "Cloud Sync 看到的是空目录。请等它的全量扫描结束。PUT 和 MKCOL 会记录路径及元数据；正文哈希完成后即丢弃，OpenList 不会保留文件内容。",
@@ -308,7 +309,8 @@
       "delete_failed": "部分删除可能已经成功。可以重试删除，或重新对比并生成新的预览。",
       "ready": "115 多余项已清理。完成任务后会将 Cloud Sync 清单写入 Writeback；缺失文件会对 Cloud Sync 显示为不存在。",
       "completed": "普通 WebDAV 已恢复。请再次运行 Cloud Sync；缺失路径将进入普通 Writeback 上传流程。",
-      "canceled": "任务已停止，未删除 115 对象。已接收路径会在 WebDAV 中显示为缺失；请再次运行 Cloud Sync 重传。"
+      "canceled": "任务已停止，未删除 115 对象。已接收路径会在 WebDAV 中显示为缺失；请再次运行 Cloud Sync 重传。",
+      "collected": "收集已关闭，WebDAV 现在会显示已收集的 Cloud Sync 清单。此时不会请求 115 LIST 或删除文件，需由你点击开始对比。"
     },
     "source_files": "Cloud Sync 文件数",
     "source_bytes": "Cloud Sync 总大小",
@@ -320,9 +322,9 @@
     "deleted": "已删除的 115 对象",
     "finish_collection": "Cloud Sync 扫描已结束",
     "compare_again": "重新对比",
-    "confirm_collection_end": "结束收集并开始逐个 Fresh LIST 对比 115？此时还不会删除任何 115 对象。",
+    "confirm_collection_end": "结束 Cloud Sync 清单收集？这会关闭收集，但暂时不会访问 115。",
     "confirm_compare_again": "使用已保存的 Cloud Sync 清单重新对比？这会再次向 115 发起 Fresh LIST。",
-    "confirm_collection_end_again": "再次确认开始对比。每次只查询一个目录，并遵守存储后端限速。",
+    "confirm_collection_end_again": "再次确认结束收集。下一步由你明确点击开始 115 对比。",
     "comparison_started": "对比已启动。",
     "delete_extras": "删除已审核的 115 多余项",
     "retry_delete": "重试已审核删除",
@@ -360,6 +362,10 @@
       "busy": "写回正在处理请求。请等待当前请求完成后重试。",
       "task_active": "已有一个清点任务正在运行。",
       "request_failed": "请求未能完成。请刷新任务状态后重试。"
-    }
+    },
+    "collection_finished": "清单收集已结束。检查收集结果后，再手动开始对比。",
+    "start_comparison": "开始 115 对比",
+    "confirm_start_comparison": "现在开始逐个 Fresh LIST 对比 115？对比期间不会删除文件。",
+    "confirm_start_comparison_again": "再次确认开始对比。每次只查询一个目录，并遵守存储后端限速。"
   }
 }

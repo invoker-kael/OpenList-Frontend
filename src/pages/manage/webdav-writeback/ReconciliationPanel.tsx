@@ -170,6 +170,25 @@ const ReconciliationPanel = () => {
 
   const finishCollection = async () => {
     const current = run()
+    if (!current || current.state !== "collecting") return
+    if (
+      !confirmDangerous(
+        t("webdav_writeback.reconciliation.confirm_collection_end"),
+        t("webdav_writeback.reconciliation.confirm_collection_end_again"),
+      )
+    )
+      return
+    try {
+      await post("/finish-collection", { run_id: current.id })
+      setStatus(t("webdav_writeback.reconciliation.collection_finished"))
+      await refresh()
+    } catch (cause) {
+      setError(t("webdav_writeback.reconciliation.errors." + reconciliationErrorKey(cause)))
+    }
+  }
+
+  const startComparison = async () => {
+    const current = run()
     if (!current) return
     const retry = current.state === "compare_failed" || current.state === "delete_failed"
     if (
@@ -177,18 +196,18 @@ const ReconciliationPanel = () => {
         t(
           retry
             ? "webdav_writeback.reconciliation.confirm_compare_again"
-            : "webdav_writeback.reconciliation.confirm_collection_end",
+            : "webdav_writeback.reconciliation.confirm_start_comparison",
         ),
-        t("webdav_writeback.reconciliation.confirm_collection_end_again"),
+        t("webdav_writeback.reconciliation.confirm_start_comparison_again"),
       )
     )
       return
     try {
-      await post("/finish-collection", { run_id: current.id })
+      await post("/start-comparison", { run_id: current.id })
       setStatus(t("webdav_writeback.reconciliation.comparison_started"))
       await refresh()
     } catch (cause) {
-      setError(t(`webdav_writeback.reconciliation.errors.${reconciliationErrorKey(cause)}`))
+      setError(t("webdav_writeback.reconciliation.errors." + reconciliationErrorKey(cause)))
     }
   }
 
@@ -270,7 +289,7 @@ const isStartable = () =>
   const currentStep = () => {
     const value = run()?.state
     if (value === "collecting" || isStartable()) return 1
-    if (value === "comparing" || value === "compare_failed") return 2
+    if (value === "collected" || value === "comparing" || value === "compare_failed") return 2
     return 3
   }
 
@@ -412,14 +431,14 @@ const isStartable = () =>
             <Text>{t("webdav_writeback.reconciliation.directories")}: {run()?.scanned_directories ?? 0}</Text>
           </HStack>
         </Show>
-        <Show when={run()?.state === "comparing" || run()?.state === "compare_failed"}>
+        <Show when={run()?.state === "collected" || run()?.state === "comparing" || run()?.state === "compare_failed"}>
           <Text size="sm" color="$neutral10">
             {t("webdav_writeback.reconciliation.instructions." + run()!.state)}
           </Text>
         </Show>
-        <Show when={run()?.state === "compare_failed" || run()?.state === "delete_failed"}>
-          <Button colorScheme="accent" mt="$3" onClick={finishCollection}>
-            {t("webdav_writeback.reconciliation.compare_again")}
+        <Show when={run()?.state === "collected" || run()?.state === "compare_failed" || run()?.state === "delete_failed"}>
+          <Button colorScheme="accent" mt="$3" onClick={startComparison}>
+            {t(run()?.state === "collected" ? "webdav_writeback.reconciliation.start_comparison" : "webdav_writeback.reconciliation.compare_again")}
           </Button>
         </Show>
         <Show when={canCancel() && currentStep() === 2}>
